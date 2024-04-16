@@ -1,0 +1,91 @@
+{
+  "project_info": {
+    "project_number": "335686843365",
+    "firebase_url": "https://logistics-ondemand-app.firebaseio.com",
+    "project_id": "logistics-ondemand-app",
+    "storage_bucket": "logistics-ondemand-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:335686843365:android:ceba9689b932af88df8d0c",
+        "android_client_info": {
+          "package_name": "com.ms.logistics"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "335686843365-99dvjmolgis3j1rmaed5793spg8s1pda.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALoyUbKfKhksdyblkTeucUUr6o-yhKbMA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "335686843365-99dvjmolgis3j1rmaed5793spg8s1pda.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "335686843365-47ck4pbvduf6mrqq5ukspj34t0ueurh7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ms.logistics.customer"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:335686843365:android:8218e02f799e2eeedf8d0c",
+        "android_client_info": {
+          "package_name": "com.ms.logistics.customer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "335686843365-oeq8fq5d5qnqv81g4q5ucc6s472r1m6l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ms.logistics.customer",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "335686843365-99dvjmolgis3j1rmaed5793spg8s1pda.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALoyUbKfKhksdyblkTeucUUr6o-yhKbMA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "335686843365-99dvjmolgis3j1rmaed5793spg8s1pda.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "335686843365-47ck4pbvduf6mrqq5ukspj34t0ueurh7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ms.logistics.customer"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
