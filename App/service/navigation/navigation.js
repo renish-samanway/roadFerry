@@ -73,6 +73,13 @@ export const getIsLoginUser = () => {
 
 const App =  createStackNavigator({
 
+  LoginScreen: {
+    screen: LoginScreen,
+    navigationOptions: {
+      headerShown: false,
+    },
+  },
+  
   RegisterAddressScreen: {
     screen: RegisterAddressScreen,
     navigationOptions: {
@@ -92,12 +99,7 @@ const App =  createStackNavigator({
       headerShown: false,
     },
   },
-  LoginScreen: {
-    screen: LoginScreen,
-    navigationOptions: {
-      headerShown: false,
-    },
-  },
+  
   RegisterScreen: {
     screen: RegisterScreen,
     navigationOptions: {

@@ -1,4 +1,4 @@
-package com.logisticsondemandcustomer
+package com.ms.logistics
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

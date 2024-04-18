@@ -15,7 +15,7 @@ import {
 
 // Import the Plugins and Thirdparty library.
 import {RFPercentage, RFValue} from 'react-native-responsive-fontsize';
-// import auth from '@react-native-firebase/auth';
+import auth from '@react-native-firebase/auth';
 // import firestore from '@react-native-firebase/firestore';
 // import auth, {firebase} from '@react-native-firebase/auth';
 // Import the JS file.
@@ -69,10 +69,9 @@ const LoginScreen = (props) => {
 
   useEffect(() => {
     // clearUserData();
-    // const willFocusSub = props.navigation.addListener('willFocus', () => {
-    //   console.log(`willFocus`)
-    //   clearUserData();
-    // });
+    const willFocusSub = props.navigation.addListener('willFocus', () => {
+      // clearUserData();
+    });
 
     return () => {
       willFocusSub.remove();
@@ -89,89 +88,89 @@ const LoginScreen = (props) => {
     props.navigation.goBack()
   }
 
-  // async function signInWithPhoneNumber(phoneNumber) {
-  //   console.log(`phoneNumber: ${phoneNumber}`)
-  //   // ! check user exist or not on database
-  //   firestore()
-  //     .collection('users')
-  //     .where('user_type', 'in', ['Customer', 'customer'])
-  //     .where('phone_number', '==', phone.value)
-  //     .get()
-  //     .then(querySnapshot => {
-  //       console.log('Total users: ', querySnapshot.size);
-  //       if (querySnapshot.size == 0) {
-  //         setIsLoading(false);
-  //         setTimeout(() => {
-  //           invalid()
-  //         }, 500)
-  //       } else {
-  //         console.log(`Sending code....`)
-  //         auth()
-  //         .signInWithPhoneNumber(phoneNumber)
-  //         .then(confirmResult => {
-  //           // console.log(`confirmResult:`, confirmResult)
-  //           // console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
-  //           console.log(`Code sent`)
-  //           setIsLoading(false);
-  //           props.navigation.navigate({
-  //             routeName: 'VerificationScreen',
-  //             params: {
-  //               isLogin: true,
-  //               phoneNumber: phone.value,
-  //               confirm: confirmResult,
-  //               loginData: querySnapshot
-  //             },
-  //           });
-  //         })
-  //         .catch(error => {
-  //           setIsLoading(false);
-  //           alert(error.message)
-  //           console.log(error)
-  //         });
-  //       }
-  //     }).catch(error => {
-  //       setIsLoading(false)
-  //       console.error(error)
-  //     });
-  //   return
-  //   // ! verify phone number with otp send
-  //   /* auth()
-  //   .verifyPhoneNumber(phoneNumber)
-  //   .then(confirmResult => {
-  //     // console.log(`confirmResult:`, confirmResult)
-  //     console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
-  //     setIsLoading(false);
-  //   })
-  //   .catch(error => {
-  //     setIsLoading(false);
-  //     alert(error.message)
-  //     console.log(error)
-  //   });
-  //   return */
-  //   // ! sign-in with phone number with otp send
-  //   auth()
-  //     .signInWithPhoneNumber(phoneNumber)
-  //     .then(confirmResult => {
-  //       // console.log(`confirmResult:`, confirmResult)
-  //       console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
-  //       setIsLoading(false);
-  //       props.navigation.navigate({
-  //         routeName: 'VerificationScreen',
-  //         params: {
-  //           isLogin: true,
-  //           phoneNumber: phone.value,
-  //           confirm: confirmResult
-  //         },
-  //       });
-  //     })
-  //     .catch(error => {
-  //       setIsLoading(false);
-  //       alert(error.message)
-  //       console.log(error)
-  //     });
-  //   //setConfirm(confirmation);
-  //   //setIsLoading(false);
-  // }
+  async function signInWithPhoneNumber(phoneNumber) {
+    console.log(`phoneNumber: ${phoneNumber}`)
+    // ! check user exist or not on database
+    firestore()
+      .collection('users')
+      .where('user_type', 'in', ['Customer', 'customer'])
+      .where('phone_number', '==', phone.value)
+      .get()
+      .then(querySnapshot => {
+        console.log('Total users: ', querySnapshot.size);
+        if (querySnapshot.size == 0) {
+          setIsLoading(false);
+          setTimeout(() => {
+            invalid()
+          }, 500)
+        } else {
+          console.log(`Sending code....`)
+          auth()
+          .signInWithPhoneNumber(phoneNumber)
+          .then(confirmResult => {
+            console.log(`SIGN IN WITH PHONE`, confirmResult);
+            // console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
+            console.log(`Code sent`)
+            setIsLoading(false);
+            props.navigation.navigate({
+              routeName: 'VerificationScreen',
+              params: {
+                isLogin: true,
+                phoneNumber: phone.value,
+                confirm: confirmResult,
+                loginData: querySnapshot
+              },
+            });
+          })
+          .catch(error => {
+            setIsLoading(false);
+            alert(error.message)
+            console.log(error)
+          });
+        }
+      }).catch(error => {
+        setIsLoading(false)
+        console.error(error)
+      });
+    return
+    // ! verify phone number with otp send
+    /* auth()
+    .verifyPhoneNumber(phoneNumber)
+    .then(confirmResult => {
+      // console.log(`confirmResult:`, confirmResult)
+      console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
+      setIsLoading(false);
+    })
+    .catch(error => {
+      setIsLoading(false);
+      alert(error.message)
+      console.log(error)
+    });
+    return */
+    // ! sign-in with phone number with otp send
+    auth()
+      .signInWithPhoneNumber(phoneNumber)
+      .then(confirmResult => {
+        // console.log(`confirmResult:`, confirmResult)
+        console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
+        setIsLoading(false);
+        props.navigation.navigate({
+          routeName: 'VerificationScreen',
+          params: {
+            isLogin: true,
+            phoneNumber: phone.value,
+            confirm: confirmResult
+          },
+        });
+      })
+      .catch(error => {
+        setIsLoading(false);
+        alert(error.message)
+        console.log(error)
+      });
+    //setConfirm(confirmation);
+    //setIsLoading(false);
+  }
 
   const onPressNewLogin = () => {
     Keyboard.dismiss()
@@ -192,7 +191,7 @@ const LoginScreen = (props) => {
     return */
     setIsLoading(true);
     let phoneNumber = `${AppConstants.country_code} ${phone.value}`
-    // signInWithPhoneNumber(phoneNumber)
+    signInWithPhoneNumber(phoneNumber)
   }
 
   /* const onPressLogin = () => {
