@@ -16,7 +16,7 @@ import {
 // Import the Plugins and Thirdparty library.
 import {RFPercentage, RFValue} from 'react-native-responsive-fontsize';
 import auth from '@react-native-firebase/auth';
-// import firestore from '@react-native-firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 // import auth, {firebase} from '@react-native-firebase/auth';
 // Import the JS file.
 import Colors from '../helper/Color';
@@ -43,7 +43,7 @@ const resetDashboardAction = StackActions.reset({
 });
 
 const LoginScreen = (props) => {
-  const [phone, setPhone] = useState({value: '', error: ''});
+  const [phone, setPhone] = useState({value: __DEV__?'9979774557':'', error: ''});
   const [isLoading, setIsLoading] = useState(false);
   const [confirm, setConfirm] = useState(null);
 
