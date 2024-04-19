@@ -16,6 +16,7 @@ import AppConstants from '../helper/AppConstants';
 import Colors from '../helper/Color';
 import AppPreference from '../helper/preference/AppPreference';
 import { setIsLoginUser } from '../service/navigation/navigation';
+import auth from '@react-native-firebase/auth';
 // import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData'
 
 // Load the main class.
@@ -275,7 +276,110 @@ const VerificationScreen = (props) => {
       />
       <SafeAreaView
         style={{flex: 1, backgroundColor: Colors.mainBackgroundColor}}>
-        
+        <ScrollView style={styles.container}>
+          <KeyboardAvoidingView behavior="position">
+            <Loader loading={isLoading} />
+            <TouchableOpacity onPress={() => props.navigation.pop()}>
+              <Image
+                style={styles.backImage}
+                source={require('../assets/assets/Authentication/back.png')}
+              />
+            </TouchableOpacity>
+            <Text style={styles.tilteText}>Verification</Text>
+            <Text style={styles.subTitleText}>{"An authentication code has been sent to "}
+              <Text style={{ color: Colors.accentColor }}>
+                {phoneNumberWithCode}
+              </Text>
+            </Text>
+            <View style={{padding: 16}}>
+              <OTPInputView
+                pinCount={6}
+                // ref={textInputRef}
+                autoFocusOnLoad={true}
+                style={{height: 64, alignSelf: 'center', width: '94%'}}
+                codeInputFieldStyle={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: Colors.borderColor,
+                  color: Colors.textColor,
+                  fontSize: 20,
+                }}
+                // codeInputHighlightStyle={{
+                //   borderColor: Colors.primaryColor,
+                //   borderWidth: 3,
+                // }}
+                // onCodeChanged={code => {
+                //   if (!validateOnlyNumber(code)) {
+                //     return;
+                //   }
+                //   setOtp({value: code, error: ''})
+                // }}
+              />
+              {otp.error == '' ? null : (
+                <Text style={styles.errorText}>{otp.error}</Text>
+              )}
+            </View>
+            <TouchableOpacity style={styles.buttonLogin} onPress={() => {
+              onPressLogin()
+            }}>
+              <Text style={styles.loginText}>SUBMIT</Text>
+            </TouchableOpacity>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                marginTop: -16,
+                justifyContent: 'center',
+              }}>
+              {isResendNow ? (
+                <View style={{flexDirection: 'row', justifyContent: 'center'}}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: Colors.subTitleTextColor,
+                      textAlign: 'center',
+                    }}>
+                    {"Didn't receive OTP? "}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      startTimer()
+                      signInWithPhoneNumber(phoneNumberWithCode)
+                    }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color: Colors.primaryColor,
+                      }}>
+                      {" Resend Code"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={{flexDirection: 'row', justifyContent: 'center'}}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: Colors.subTitleTextColor,
+                      textAlign: 'center',
+                    }}>
+                    {"Code sent. Resend code in "}
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color: Colors.subTitleTextColor,
+                      }}>
+                      {timer + seconds}
+                    </Text>
+                  </Text>
+                </View>
+              )}
+            </View>
+          </KeyboardAvoidingView>
+        </ScrollView>
       </SafeAreaView>
     </>
   );

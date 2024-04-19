@@ -29,6 +29,8 @@ import AppConstants, {customStyles, seconds} from '../helper/AppConstants';
 import StepIndicator from 'react-native-step-indicator';
 import {TextInput as Input} from 'react-native-paper';
 import OTPInputView from '@twotalltotems/react-native-otp-input';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 import moment from 'moment';
 // import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
 import {
@@ -177,21 +179,21 @@ const RegisterScreen = (props) => {
   async function signInWithPhoneNumber(phoneNumber, isResend) {
     console.log(`phoneNumber: ${phoneNumber}`)
     setIsLoading(true);
-    // auth()
-    //   .signInWithPhoneNumber(phoneNumber,isResend)
-    //   .then(confirmResult => {
-    //     console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
-    //     setIsLoading(false);
-    //     setConfirm(confirmResult)
-    //     if (!isResend) {
-    //       setCurrentPosition(currentPosition+1)
-    //     }
-    //   })
-    //   .catch(error => {
-    //     setIsLoading(false);
-    //     alert(error.message)
-    //     console.log(error)
-    //   });
+    auth()
+      .signInWithPhoneNumber(phoneNumber,isResend)
+      .then(confirmResult => {
+        console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
+        setIsLoading(false);
+        setConfirm(confirmResult)
+        if (!isResend) {
+          setCurrentPosition(currentPosition+1)
+        }
+      })
+      .catch(error => {
+        setIsLoading(false);
+        alert(error.message)
+        console.log(error)
+      });
     console.log("SignIn functionality needs to be integrated.");
   }
 
@@ -220,82 +222,82 @@ const RegisterScreen = (props) => {
     } */ else {
       setIsLoading(true);
 
-      // const usersWithMatchingPhoneNumbers = firestore()
-      //   .collection('users')
-      //   .where('user_type', 'in', ['Customer', 'customer'])
-      //   .where('phone_number', '==', phone.value);
-      // const usersWithMatchingEmailAddresses = firestore()
-      //   .collection('users')
-      //   .where('user_type', 'in', ['Customer', 'customer'])
-      //   .where('email', '==', email.value);
+      const usersWithMatchingPhoneNumbers = firestore()
+        .collection('users')
+        .where('user_type', 'in', ['Customer', 'customer'])
+        .where('phone_number', '==', phone.value);
+      const usersWithMatchingEmailAddresses = firestore()
+        .collection('users')
+        .where('user_type', 'in', ['Customer', 'customer'])
+        .where('email', '==', email.value);
       
-      // Promise.all([usersWithMatchingPhoneNumbers.get(), usersWithMatchingEmailAddresses.get()])
-      // .then(querySnapshots => {
-      //   const querySnapshot = !querySnapshots[0].empty ? querySnapshots[0] : querySnapshots[1];
-      //   console.log('Total users: ', querySnapshot.size);
-      //   if (querySnapshot.size == 0) {
-      //     setIsLoading(false);
-      //     startTimer()
-      //     let phoneNumberWithCode = `${AppConstants.country_code} ${phone.value}`
-      //     signInWithPhoneNumber(phoneNumberWithCode, false)
-      //     /* props.navigation.navigate({
-      //       routeName: 'RegisterAddressScreen',
-      //       params: {
-      //         firstName: name.value,
-      //         lastName: lastName.value,
-      //         email: email.value,
-      //         phone: phone.value,
-      //         // password: password.value,
-      //         latitude: currentLat,
-      //         longitude: currentLong,
-      //       },
-      //     }); */
-      //   } else {
-      //     const data = querySnapshot.docs[0]?.data();
-      //     const isDuplicatePhoneNumber = data?.phone_number === phone?.value;
-      //     const isDuplicateEmailAddress = data?.email?.toLowerCase() === email?.value?.toLowerCase();
+      Promise.all([usersWithMatchingPhoneNumbers.get(), usersWithMatchingEmailAddresses.get()])
+      .then(querySnapshots => {
+        const querySnapshot = !querySnapshots[0].empty ? querySnapshots[0] : querySnapshots[1];
+        console.log('Total users: ', querySnapshot.size);
+        if (querySnapshot.size == 0) {
+          setIsLoading(false);
+          startTimer()
+          let phoneNumberWithCode = `${AppConstants.country_code} ${phone.value}`
+          signInWithPhoneNumber(phoneNumberWithCode, false)
+          /* props.navigation.navigate({
+            routeName: 'RegisterAddressScreen',
+            params: {
+              firstName: name.value,
+              lastName: lastName.value,
+              email: email.value,
+              phone: phone.value,
+              // password: password.value,
+              latitude: currentLat,
+              longitude: currentLong,
+            },
+          }); */
+        } else {
+          const data = querySnapshot.docs[0]?.data();
+          const isDuplicatePhoneNumber = data?.phone_number === phone?.value;
+          const isDuplicateEmailAddress = data?.email?.toLowerCase() === email?.value?.toLowerCase();
 
-      //     setIsLoading(false)
-      //     setTimeout(() => {
-      //       invalid({isDuplicatePhoneNumber, isDuplicateEmailAddress})
-      //     }, 100)
-      //   }
-      // }).catch(error => {
-      //   setIsLoading(false)
-      //   console.error(error)
-      // });
-      // setIsLoading(true);
-      // auth()
-      //   .createUserWithEmailAndPassword(email.value, password.value)
-      //   .then((response) => {
-      //     console.log('Email response is : ', response);
-      //     const ref = firestore().collection('user');
-      //     console.log('rootRef is : ', response.user.uid);
-      //     ref.add({
-      //       email: email.value,
-      //       firstname: name.value,
-      //       lastname: lastName.value,
-      //       mobile: phone.value,
-      //       address: address.value,
-      //       latitude: currentLat,
-      //       longitude: currentLong,
-      //       user_type: 'Customer',
-      //       device_details: AppConstants.device_details,
-      //     });
-      //     setIsLoading(false);
-      //     props.navigation.pop();
-      //   })
-      //   .catch((error) => {
-      //     setIsLoading(false);
-      //     console.log('Eroor is : ', error.code);
-      //     console.log('Please login with Email with password account');
-      //     Alert.alert(
-      //       'Alert',
-      //       'Email id already exist.Please login',
-      //       [{text: 'OK', onPress: () => console.log('OK Pressed')}],
-      //       {cancelable: false},
-      //     );
-      //   });
+          setIsLoading(false)
+          setTimeout(() => {
+            invalid({isDuplicatePhoneNumber, isDuplicateEmailAddress})
+          }, 100)
+        }
+      }).catch(error => {
+        setIsLoading(false)
+        console.error(error)
+      });
+      setIsLoading(true);
+      auth()
+        .createUserWithEmailAndPassword(email.value, password.value)
+        .then((response) => {
+          console.log('Email response is : ', response);
+          const ref = firestore().collection('user');
+          console.log('rootRef is : ', response.user.uid);
+          ref.add({
+            email: email.value,
+            firstname: name.value,
+            lastname: lastName.value,
+            mobile: phone.value,
+            address: address.value,
+            latitude: currentLat,
+            longitude: currentLong,
+            user_type: 'Customer',
+            device_details: AppConstants.device_details,
+          });
+          setIsLoading(false);
+          props.navigation.pop();
+        })
+        .catch((error) => {
+          setIsLoading(false);
+          console.log('Eroor is : ', error.code);
+          console.log('Please login with Email with password account');
+          Alert.alert(
+            'Alert',
+            'Email id already exist.Please login',
+            [{text: 'OK', onPress: () => console.log('OK Pressed')}],
+            {cancelable: false},
+          );
+        });
     }
   };
 
