@@ -1,21 +1,29 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
-  Alert, Image, Keyboard,
-  KeyboardAvoidingView, SafeAreaView,
-  ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View
+  Alert,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OTPInputView from '@twotalltotems/react-native-otp-input';
 import moment from 'moment';
 // Import the Plugins and Thirdparty library.
-import { RFPercentage } from 'react-native-responsive-fontsize';
-import { useDispatch } from 'react-redux';
+import {RFPercentage} from 'react-native-responsive-fontsize';
+import {useDispatch} from 'react-redux';
 import Loader from '../Components/Loader';
 import AppConstants from '../helper/AppConstants';
 // Import the JS file.
 import Colors from '../helper/Color';
 import AppPreference from '../helper/preference/AppPreference';
-import { setIsLoginUser } from '../service/navigation/navigation';
+import {setIsLoginUser} from '../service/navigation/navigation';
 import auth from '@react-native-firebase/auth';
 // import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData'
 
@@ -23,15 +31,14 @@ import auth from '@react-native-firebase/auth';
 let setOpenTime = moment(new Date());
 let seconds = 30;
 
-const VerificationScreen = (props) => {
-  
+const VerificationScreen = props => {
   const dispatch = useDispatch();
 
   const phoneNumber = props.navigation.getParam('phoneNumber');
   const isLogin = props.navigation.getParam('isLogin');
-  let phoneNumberWithCode = `${AppConstants.country_code} ${phoneNumber}`
+  let phoneNumberWithCode = `${AppConstants.country_code} ${phoneNumber}`;
   let confirm = props.navigation.getParam('confirm');
-  let data = null
+  let data = null;
   if (isLogin) {
     data = props.navigation.getParam('loginData');
   } else {
@@ -40,10 +47,10 @@ const VerificationScreen = (props) => {
 
   const [otp, setOtp] = useState({value: '', error: ''});
   const [isLoading, setIsLoading] = useState(false);
-  const [isResendNow, setIsResendNow] = useState(false)
-  const [timer, setTimer] = useState(0)
+  const [isResendNow, setIsResendNow] = useState(false);
+  const [timer, setTimer] = useState(0);
   // const [confirm, setConfirm] = useState(null);
-  let clockCall = null
+  let clockCall = null;
 
   const invalid = () => {
     Alert.alert(
@@ -52,16 +59,16 @@ const VerificationScreen = (props) => {
       [{text: 'OK', onPress: () => console.log('OK Pressed')}],
       {cancelable: false},
     );
-  }
+  };
 
   async function signInWithPhoneNumber(phoneNumber) {
-    console.log(`phoneNumber: ${phoneNumber}`)
+    console.log(`phoneNumber: ${phoneNumber}`);
     setIsLoading(true);
     auth()
-      .signInWithPhoneNumber(phoneNumber,true)
+      .signInWithPhoneNumber(phoneNumber, true)
       .then(confirmResult => {
         setIsLoading(false);
-        confirm = confirmResult
+        confirm = confirmResult;
       })
       .catch(error => {
         setIsLoading(false);
@@ -74,14 +81,14 @@ const VerificationScreen = (props) => {
       if (clockCall) {
         clearInterval(clockCall);
       }
-      setIsResendNow(true)
+      setIsResendNow(true);
     }
-    setTimer(asSeconds)
+    setTimer(asSeconds);
   };
 
   const startTimer = () => {
-    setIsResendNow(false)
-    setTimer(0)
+    setIsResendNow(false);
+    setTimer(0);
     setOpenTime = moment(new Date());
     clockCall = setInterval(() => {
       let nowTime = moment(new Date());
@@ -93,13 +100,13 @@ const VerificationScreen = (props) => {
   };
 
   useEffect(() => {
-    startTimer()
+    startTimer();
     return () => {
       if (clockCall) {
         clearInterval(clockCall);
       }
     };
-  }, []) 
+  }, []);
 
   let onlyNumberFieldRegex = '^[0-9]+$';
   const validateOnlyNumber = text => {
@@ -113,44 +120,51 @@ const VerificationScreen = (props) => {
 
   async function confirmCode() {
     try {
-      console.log(`otp.value: ${otp.value}`)
+      console.log(`otp.value: ${otp.value}`);
       // console.log(`confirm:`, confirm)
-      setIsLoading(true)
-      confirm.confirm(otp.value)
-      .then(response => {
-        // console.log(`confirmResult:`, confirmResult)
-        // console.log(`confirmResult: ${JSON.stringify(response)}`)
-        console.log('rootRef is :', response.user.uid);
-        if (isLogin) {
-          console.log(`sign in`)
-          // setIsLoading(false);
-          response.user.getIdToken(true).then(token => {
-            console.log('token:', token);
-            data.forEach(documentSnapshot => {
-              console.log('User ID: ', documentSnapshot.id);
-              // if (documentSnapshot.id == response.user.uid) {
+      setIsLoading(true);
+      confirm
+        .confirm(otp.value)
+        .then(response => {
+          // console.log(`confirmResult:`, confirmResult)
+          // console.log(`confirmResult: ${JSON.stringify(response)}`)
+          console.log('rootRef is :', response.user.uid);
+          if (isLogin) {
+            console.log(`sign in`);
+            // setIsLoading(false);
+            response.user.getIdToken(true).then(token => {
+              console.log('token:', token);
+              data.forEach(documentSnapshot => {
+                console.log('User ID: ', documentSnapshot.id);
+                // if (documentSnapshot.id == response.user.uid) {
                 AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
-                AsyncStorage.setItem(AppPreference.LOGIN_UID,response.user.uid);
-                AsyncStorage.setItem(AppPreference.LOGIN_TOKEN,token);
+                AsyncStorage.setItem(
+                  AppPreference.LOGIN_UID,
+                  response.user.uid,
+                );
+                AsyncStorage.setItem(AppPreference.LOGIN_TOKEN, token);
 
-                AsyncStorage.getItem(AppPreference.FCM_TOKEN).then((fcmToken) => {
+                AsyncStorage.getItem(AppPreference.FCM_TOKEN).then(fcmToken => {
                   if (fcmToken == null) {
                     setIsLoading(false);
-                    console.log(`AppPreference.FCM_TOKEN.null`)
+                    console.log(`AppPreference.FCM_TOKEN.null`);
                   } else {
                     setIsLoading(false);
-                    console.log(`AppPreference.FCM_TOKEN:`, fcmToken)
+                    console.log(`AppPreference.FCM_TOKEN:`, fcmToken);
 
-                    let updatedData = { access_token: token, fcm_token: fcmToken }
+                    let updatedData = {
+                      access_token: token,
+                      fcm_token: fcmToken,
+                    };
                     // firestore()
                     // .collection('users')
                     // .doc(documentSnapshot.id)
                     // .update(updatedData)
 
-                    let userData = {...documentSnapshot.data()}
-                    userData.access_token = token
-                    userData.fcm_token = fcmToken
-                    console.log(`userData:`, userData)
+                    let userData = {...documentSnapshot.data()};
+                    userData.access_token = token;
+                    userData.fcm_token = fcmToken;
+                    console.log(`userData:`, userData);
 
                     AsyncStorage.setItem(
                       AppPreference.LOGIN_USER_DATA,
@@ -162,89 +176,89 @@ const VerificationScreen = (props) => {
                       //   userUID: documentSnapshot.id
                       // });
 
-                      setIsLoginUser(true)
+                      setIsLoginUser(true);
                       props.navigation.navigate({
                         routeName: 'Dashboard',
                       });
                       // props.navigation.goBack()
-                    })
+                    });
                   }
                 });
-              // }
-            });
-          })
-        } else {
-          console.log(`sign up`)
-          if (data != null) {
-            response.user.getIdToken(true).then(token => {
-              console.log('token:', token);
-              AsyncStorage.getItem(AppPreference.FCM_TOKEN).then((fcmToken) => {
-                if (fcmToken == null) {
-                  setIsLoading(false);
-                  console.log(`AppPreference.FCM_TOKEN.null`)
-                } else {
-                  console.log(`AppPreference.FCM_TOKEN:`, fcmToken)
-                  data.fcm_token = fcmToken
-                  data.access_token = token
-                  console.log(`data:`, data)
-                  // firestore()
-                  // .collection('users')
-                  // .doc(response.user.uid)
-                  // .set(data)
-                  // .then(querySnapshot => {
-                  //   // console.log('Total users: ', querySnapshot.size);
-                  //   setIsLoading(false);
-                  //   AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
-                  //   AsyncStorage.setItem(AppPreference.LOGIN_TOKEN,token);
-                  //   AsyncStorage.setItem(AppPreference.LOGIN_UID, response.user.uid).then(
-                  //     () => {
-                  //       console.log(`AsyncStorage.setItem.LOGIN_UID`)
-                  //       AsyncStorage.setItem(
-                  //         AppPreference.LOGIN_USER_DATA,
-                  //         JSON.stringify(data),
-                  //       ).then(() => {
-                  //         dispatch({
-                  //           type: fetchProfileDataActions.FETCH_PROFILE_DATA,
-                  //           fetchProfileData: data,
-                  //           userUID: response.user.uid
-                  //         });
-
-                  //         setIsLoginUser(true)
-                  //         props.navigation.navigate({
-                  //           routeName: 'Dashboard',
-                  //         });
-                  //       })
-                  //     },
-                  //   );
-                  // }).catch(error => {
-                  //   setIsLoading(false);
-                  //   console.error(error)
-                  // });
-                }
+                // }
               });
-            })
+            });
+          } else {
+            console.log(`sign up`);
+            if (data != null) {
+              response.user.getIdToken(true).then(token => {
+                console.log('token:', token);
+                AsyncStorage.getItem(AppPreference.FCM_TOKEN).then(fcmToken => {
+                  if (fcmToken == null) {
+                    setIsLoading(false);
+                    console.log(`AppPreference.FCM_TOKEN.null`);
+                  } else {
+                    console.log(`AppPreference.FCM_TOKEN:`, fcmToken);
+                    data.fcm_token = fcmToken;
+                    data.access_token = token;
+                    console.log(`data:`, data);
+                    // firestore()
+                    // .collection('users')
+                    // .doc(response.user.uid)
+                    // .set(data)
+                    // .then(querySnapshot => {
+                    //   // console.log('Total users: ', querySnapshot.size);
+                    //   setIsLoading(false);
+                    //   AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
+                    //   AsyncStorage.setItem(AppPreference.LOGIN_TOKEN,token);
+                    //   AsyncStorage.setItem(AppPreference.LOGIN_UID, response.user.uid).then(
+                    //     () => {
+                    //       console.log(`AsyncStorage.setItem.LOGIN_UID`)
+                    //       AsyncStorage.setItem(
+                    //         AppPreference.LOGIN_USER_DATA,
+                    //         JSON.stringify(data),
+                    //       ).then(() => {
+                    //         dispatch({
+                    //           type: fetchProfileDataActions.FETCH_PROFILE_DATA,
+                    //           fetchProfileData: data,
+                    //           userUID: response.user.uid
+                    //         });
+
+                    //         setIsLoginUser(true)
+                    //         props.navigation.navigate({
+                    //           routeName: 'Dashboard',
+                    //         });
+                    //       })
+                    //     },
+                    //   );
+                    // }).catch(error => {
+                    //   setIsLoading(false);
+                    //   console.error(error)
+                    // });
+                  }
+                });
+              });
+            }
           }
-        }
-      })
-      .catch(error => {
-        setIsLoading(false);
-        alert(error.message)
-        console.log(error)
-      });;
+        })
+        .catch(error => {
+          setIsLoading(false);
+          alert(error.message);
+          console.log(error);
+        });
     } catch (error) {
       setIsLoading(false);
       console.log('Invalid code.');
-      setOtp({value: otp.value, error: "Invalid code."})
+      setOtp({value: otp.value, error: 'Invalid code.'});
     }
   }
-  
+
   function onPressLogin() {
     if (otp.value.length < 6) {
-      setOtp({ value: otp.value, error: "Please enter valid code." })
-      return
+      setOtp({value: otp.value, error: 'Please enter valid code.'});
+      return;
     }
-    confirmCode()
-  };
+    confirmCode();
+  }
 
   const textInputRef = useRef(null);
 
@@ -256,7 +270,10 @@ const VerificationScreen = (props) => {
     };
 
     // Add an event listener for when the screen is focused
-    const screenFocusListener = props.navigation.addListener('focus', focusTextInput);
+    const screenFocusListener = props.navigation.addListener(
+      'focus',
+      focusTextInput,
+    );
 
     return () => {
       // Remove the event listener when the screen is unfocused
@@ -286,8 +303,9 @@ const VerificationScreen = (props) => {
               />
             </TouchableOpacity>
             <Text style={styles.tilteText}>Verification</Text>
-            <Text style={styles.subTitleText}>{"An authentication code has been sent to "}
-              <Text style={{ color: Colors.accentColor }}>
+            <Text style={styles.subTitleText}>
+              {'An authentication code has been sent to '}
+              <Text style={{color: Colors.accentColor}}>
                 {phoneNumberWithCode}
               </Text>
             </Text>
@@ -321,9 +339,11 @@ const VerificationScreen = (props) => {
                 <Text style={styles.errorText}>{otp.error}</Text>
               )}
             </View>
-            <TouchableOpacity style={styles.buttonLogin} onPress={() => {
-              onPressLogin()
-            }}>
+            <TouchableOpacity
+              style={styles.buttonLogin}
+              onPress={() => {
+                onPressLogin();
+              }}>
               <Text style={styles.loginText}>SUBMIT</Text>
             </TouchableOpacity>
 
@@ -346,15 +366,15 @@ const VerificationScreen = (props) => {
                   <TouchableOpacity
                     onPress={() => {
                       Keyboard.dismiss();
-                      startTimer()
-                      signInWithPhoneNumber(phoneNumberWithCode)
+                      startTimer();
+                      signInWithPhoneNumber(phoneNumberWithCode);
                     }}>
                     <Text
                       style={{
                         fontSize: 16,
                         color: Colors.primaryColor,
                       }}>
-                      {" Resend Code"}
+                      {' Resend Code'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -366,7 +386,7 @@ const VerificationScreen = (props) => {
                       color: Colors.subTitleTextColor,
                       textAlign: 'center',
                     }}>
-                    {"Code sent. Resend code in "}
+                    {'Code sent. Resend code in '}
                     <Text
                       style={{
                         fontSize: 16,

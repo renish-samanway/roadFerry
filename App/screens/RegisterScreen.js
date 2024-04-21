@@ -13,7 +13,7 @@ import {
   Alert,
   Platform,
   PermissionsAndroid,
-  Linking
+  Linking,
 } from 'react-native';
 
 // Import the Plugins and Thirdparty library.
@@ -48,19 +48,28 @@ import {
 } from '../helper/extensions/Validator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppPreference from '../helper/asyncStorage';
-import { useDispatch } from 'react-redux';
+import {useDispatch} from 'react-redux';
 import CheckboxInput from '../Components/CheckboxInput';
 
 // Load the main class.
-let stepLabels = ["General\ndetails", "Verification", "Address"];
+let stepLabels = ['General\ndetails', 'Verification', 'Address'];
 
-const RegisterScreen = (props) => {
+const RegisterScreen = props => {
   const ref = useRef();
 
-  const [name, setName] = useState({value: '', error: ''});
-  const [lastName, setLastName] = useState({value: '', error: ''});
-  const [email, setEmail] = useState({value: '', error: ''});
-  const [phone, setPhone] = useState({value: '', error: ''});
+  const [name, setName] = useState({value: __DEV__ ? 'Renish' : '', error: ''});
+  const [lastName, setLastName] = useState({
+    value: __DEV__ ? 'Paghdar' : '',
+    error: '',
+  });
+  const [email, setEmail] = useState({
+    value: __DEV__ ? 'renish.samanway@gmail.com' : '',
+    error: '',
+  });
+  const [phone, setPhone] = useState({
+    value: __DEV__ ? '9537386566' : '',
+    error: '',
+  });
   const [address, setAddress] = useState({value: '', error: ''});
   const [password, setPassword] = useState({value: '', error: ''});
   const [isLoading, setIsLoading] = useState(false);
@@ -69,12 +78,12 @@ const RegisterScreen = (props) => {
   const [currentPosition, setCurrentPosition] = useState(0);
 
   const [otp, setOtp] = useState({value: '', error: ''});
-  const [isResendNow, setIsResendNow] = useState(false)
-  const [timer, setTimer] = useState(0)
+  const [isResendNow, setIsResendNow] = useState(false);
+  const [timer, setTimer] = useState(0);
   const [confirm, setConfirm] = useState(null);
   const [uID, setUID] = useState(null);
   const [token, setToken] = useState('');
-  let clockCall = null
+  let clockCall = null;
 
   const [flatName, setFlatName] = useState({value: '', error: ''});
   const [area, setArea] = useState({value: '', error: ''});
@@ -83,37 +92,41 @@ const RegisterScreen = (props) => {
   const [country, setCountry] = useState({value: '', error: ''});
   const [pincode, setPincode] = useState({value: '', error: ''});
 
-  const [termsAndConditionsAgreed, setTermsAndConditionsAgreed] = useState(false);
+  const [termsAndConditionsAgreed, setTermsAndConditionsAgreed] =
+    useState(false);
 
   const dispatch = useDispatch();
 
   useEffect(() => {
     componentDidMount();
   }, []);
-  
+
   const otpRef = useRef(null);
 
   useEffect(() => {
-    if(currentPosition == 1) setTimeout(() => otpRef.current?.focusField(0), 250);
+    if (currentPosition == 1)
+      setTimeout(() => otpRef.current?.focusField(0), 250);
   }, [currentPosition]);
 
   const invalid = ({isDuplicatePhoneNumber, isDuplicateEmailAddress}) => {
     const errorText = {
-      phone_number_dup: 'User already registered. Please try again with different number.',
-      email_dup: 'Email already registered. Please try again with a different email address.',
-      common: 'Unknown error occurred. Please try again.'
-    }
+      phone_number_dup:
+        'User already registered. Please try again with different number.',
+      email_dup:
+        'Email already registered. Please try again with a different email address.',
+      common: 'Unknown error occurred. Please try again.',
+    };
     Alert.alert(
       'Alert',
-      isDuplicatePhoneNumber ? 
-        errorText.phone_number_dup : 
-        isDuplicateEmailAddress ? 
-        errorText.email_dup :
-        errorText.common,
+      isDuplicatePhoneNumber
+        ? errorText.phone_number_dup
+        : isDuplicateEmailAddress
+        ? errorText.email_dup
+        : errorText.common,
       [{text: 'OK', onPress: () => console.log('OK Pressed')}],
       {cancelable: false},
     );
-  }
+  };
 
   let onlyNumberFieldRegex = '^[0-9]+$';
   const validateOnlyNumber = text => {
@@ -130,14 +143,14 @@ const RegisterScreen = (props) => {
       if (clockCall) {
         clearInterval(clockCall);
       }
-      setIsResendNow(true)
+      setIsResendNow(true);
     }
-    setTimer(asSeconds)
+    setTimer(asSeconds);
   };
 
   const startTimer = () => {
-    setIsResendNow(false)
-    setTimer(0)
+    setIsResendNow(false);
+    setTimer(0);
     let setOpenTime = moment(new Date());
     clockCall = setInterval(() => {
       let nowTime = moment(new Date());
@@ -150,51 +163,51 @@ const RegisterScreen = (props) => {
 
   async function confirmCode() {
     try {
-      setIsLoading(true)
-      console.log(`otp.value: ${otp.value}`)
-      console.log(`confirm:`, confirm)
-      await confirm.confirm(otp.value)
-      .then(confirmResult => {
-        // console.log(`confirmResult:`, confirmResult)
-        console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
-        setUID(confirmResult.user.uid)
-        confirmResult.user.getIdToken(true).then(token => {
-          setToken(token)
-          setIsLoading(false);
-          setCurrentPosition(currentPosition+1)
+      setIsLoading(true);
+      console.log(`otp.value: ${otp.value}`);
+      console.log(`confirm:`, confirm);
+      await confirm
+        .confirm(otp.value)
+        .then(confirmResult => {
+          console.log(`confirmResult: ${JSON.stringify(confirmResult)}`);
+          setUID(confirmResult.user.uid);
+          confirmResult.user.getIdToken(true).then(token => {
+            setToken(token);
+            setIsLoading(false);
+            setCurrentPosition(currentPosition + 1);
+          });
         })
-      })
-      .catch(error => {
-        setIsLoading(false);
-        setOtp({value: otp.value, error: "Invalid Code."})
-        console.log(error)
-      });;
+        .catch(error => {
+          setIsLoading(false);
+          setOtp({value: otp.value, error: 'Invalid Code.'});
+          console.log(error);
+        });
     } catch (error) {
       setIsLoading(false);
-      setOtp({value: otp.value, error: "Invalid Code."})
+      setOtp({value: otp.value, error: 'Invalid Code.'});
       console.log('Invalid code.');
     }
   }
 
   async function signInWithPhoneNumber(phoneNumber, isResend) {
-    console.log(`phoneNumber: ${phoneNumber}`)
+    console.log(`phoneNumber: ${phoneNumber}`);
     setIsLoading(true);
     auth()
-      .signInWithPhoneNumber(phoneNumber,isResend)
+      .signInWithPhoneNumber(phoneNumber, isResend)
       .then(confirmResult => {
-        console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
+        console.log(`confirmResult: ${JSON.stringify(confirmResult)}`);
         setIsLoading(false);
-        setConfirm(confirmResult)
+        setConfirm(confirmResult);
         if (!isResend) {
-          setCurrentPosition(currentPosition+1)
+          setCurrentPosition(currentPosition + 1);
         }
       })
       .catch(error => {
         setIsLoading(false);
-        alert(error.message)
-        console.log(error)
+        alert(error.message);
+        console.log(error);
       });
-    console.log("SignIn functionality needs to be integrated.");
+    console.log('SignIn functionality needs to be integrated.');
   }
 
   const onPressStep1Next = () => {
@@ -210,13 +223,13 @@ const RegisterScreen = (props) => {
     } else if (lastNameError) {
       setLastName({...lastName, error: lastNameError});
       return;
-    }/*  else if (emailError) {
+    } /*  else if (emailError) {
       setEmail({...email, error: emailError});
       return;
     } */ else if (phoneError) {
       setPhone({...phone, error: phoneError});
       return;
-    }/*  else if (passwordError) {
+    } /*  else if (passwordError) {
       setPassword({...password, error: passwordError});
       return;
     } */ else {
@@ -230,17 +243,22 @@ const RegisterScreen = (props) => {
         .collection('users')
         .where('user_type', 'in', ['Customer', 'customer'])
         .where('email', '==', email.value);
-      
-      Promise.all([usersWithMatchingPhoneNumbers.get(), usersWithMatchingEmailAddresses.get()])
-      .then(querySnapshots => {
-        const querySnapshot = !querySnapshots[0].empty ? querySnapshots[0] : querySnapshots[1];
-        console.log('Total users: ', querySnapshot.size);
-        if (querySnapshot.size == 0) {
-          setIsLoading(false);
-          startTimer()
-          let phoneNumberWithCode = `${AppConstants.country_code} ${phone.value}`
-          signInWithPhoneNumber(phoneNumberWithCode, false)
-          /* props.navigation.navigate({
+
+      Promise.all([
+        usersWithMatchingPhoneNumbers.get(),
+        usersWithMatchingEmailAddresses.get(),
+      ])
+        .then(querySnapshots => {
+          const querySnapshot = !querySnapshots[0].empty
+            ? querySnapshots[0]
+            : querySnapshots[1];
+          console.log('Total users: ', querySnapshot.size);
+          if (querySnapshot.size == 0) {
+            setIsLoading(false);
+            startTimer();
+            let phoneNumberWithCode = `${AppConstants.country_code} ${phone.value}`;
+            signInWithPhoneNumber(phoneNumberWithCode, false);
+            /* props.navigation.navigate({
             routeName: 'RegisterAddressScreen',
             params: {
               firstName: name.value,
@@ -252,24 +270,26 @@ const RegisterScreen = (props) => {
               longitude: currentLong,
             },
           }); */
-        } else {
-          const data = querySnapshot.docs[0]?.data();
-          const isDuplicatePhoneNumber = data?.phone_number === phone?.value;
-          const isDuplicateEmailAddress = data?.email?.toLowerCase() === email?.value?.toLowerCase();
+          } else {
+            const data = querySnapshot.docs[0]?.data();
+            const isDuplicatePhoneNumber = data?.phone_number === phone?.value;
+            const isDuplicateEmailAddress =
+              data?.email?.toLowerCase() === email?.value?.toLowerCase();
 
-          setIsLoading(false)
-          setTimeout(() => {
-            invalid({isDuplicatePhoneNumber, isDuplicateEmailAddress})
-          }, 100)
-        }
-      }).catch(error => {
-        setIsLoading(false)
-        console.error(error)
-      });
+            setIsLoading(false);
+            setTimeout(() => {
+              invalid({isDuplicatePhoneNumber, isDuplicateEmailAddress});
+            }, 100);
+          }
+        })
+        .catch(error => {
+          setIsLoading(false);
+          console.error(error);
+        });
       setIsLoading(true);
       auth()
         .createUserWithEmailAndPassword(email.value, password.value)
-        .then((response) => {
+        .then(response => {
           console.log('Email response is : ', response);
           const ref = firestore().collection('user');
           console.log('rootRef is : ', response.user.uid);
@@ -287,7 +307,7 @@ const RegisterScreen = (props) => {
           setIsLoading(false);
           props.navigation.pop();
         })
-        .catch((error) => {
+        .catch(error => {
           setIsLoading(false);
           console.log('Eroor is : ', error.code);
           console.log('Please login with Email with password account');
@@ -302,16 +322,18 @@ const RegisterScreen = (props) => {
   };
 
   const onPressStep2Next = () => {
-    console.log(`otp:`, otp)
+    console.log(`otp:`, otp);
     if (otp.value.length < 6) {
-      setOtp({ value: otp.value, error: "Please enter valid code." })
-      return
+      setOtp({value: otp.value, error: 'Please enter valid code.'});
+      return;
     }
-    confirmCode()
-  }
+    confirmCode();
+  };
 
   const onPressStep3Signup = () => {
-    const flatNameError = flatNameValidator(ref ? ref.current?.getAddressText() : flatName.value);
+    const flatNameError = flatNameValidator(
+      ref ? ref.current?.getAddressText() : flatName.value,
+    );
     const areaError = areaValidator(area.value);
     const cityError = cityValidator(city.value);
     const stateError = stateValidator(state.value);
@@ -336,21 +358,21 @@ const RegisterScreen = (props) => {
     } else if (pincodeError) {
       setPincode({...pincode, error: pincodeError});
       return;
-    } else if(!termsAndConditionsAgreed){
-      Alert.alert("","Please accept the Terms and Conditions to proceed");
+    } else if (!termsAndConditionsAgreed) {
+      Alert.alert('', 'Please accept the Terms and Conditions to proceed');
       return;
     } else {
       setIsLoading(true);
-        
-      let addressData = {}
-      addressData.flat_number = flatName.value
-      addressData.area = area.value
-      addressData.city = city.value
-      addressData.state = state.value
-      addressData.country = country.value
-      addressData.pincode = pincode.value
-      addressData.latitude = currentLat
-      addressData.longitude = currentLong
+
+      let addressData = {};
+      addressData.flat_number = flatName.value;
+      addressData.area = area.value;
+      addressData.city = city.value;
+      addressData.state = state.value;
+      addressData.country = country.value;
+      addressData.pincode = pincode.value;
+      addressData.latitude = currentLat;
+      addressData.longitude = currentLong;
 
       let registerData = {
         // access_token: token,
@@ -369,18 +391,18 @@ const RegisterScreen = (props) => {
         status: true,
         is_deleted: false,
         terms_and_conditions_accepted: termsAndConditionsAgreed,
-        created_at: new Date()
-      }
+        created_at: new Date(),
+      };
 
       console.log('token:', token);
-      AsyncStorage.getItem(AppPreference.FCM_TOKEN).then((fcmToken) => {
+      AsyncStorage.getItem(AppPreference.FCM_TOKEN).then(fcmToken => {
         if (fcmToken == null) {
           setIsLoading(false);
-          console.log(`AppPreference.FCM_TOKEN.null`)
+          console.log(`AppPreference.FCM_TOKEN.null`);
         } else {
-          console.log(`AppPreference.FCM_TOKEN:`, fcmToken)
-          registerData.fcm_token = fcmToken
-          registerData.access_token = token
+          console.log(`AppPreference.FCM_TOKEN:`, fcmToken);
+          registerData.fcm_token = fcmToken;
+          registerData.access_token = token;
           // console.log(`data:`, data)
           // firestore()
           // .collection('users')
@@ -418,7 +440,7 @@ const RegisterScreen = (props) => {
         }
       });
     }
-  }
+  };
 
   const componentDidMount = () => {
     var that = this;
@@ -448,11 +470,11 @@ const RegisterScreen = (props) => {
       requestLocationPermission();
     }
   };
-  const callLocation = (that) => {
+  const callLocation = that => {
     //alert("callLocation Called");
     Geolocation.getCurrentPosition(
       //Will give you the current location
-      (position) => {
+      position => {
         const currentLongitude = position.coords.longitude;
         //getting the Longitude from the location json
         const currentLatitude = position.coords.latitude;
@@ -469,7 +491,7 @@ const RegisterScreen = (props) => {
       // (error) => alert(error.message),
       // {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000},
     );
-    that.watchID = Geolocation.watchPosition((position) => {
+    that.watchID = Geolocation.watchPosition(position => {
       //Will give you the location on location change
       console.log(position);
       const currentLongitude = position.coords.longitude;
@@ -501,64 +523,58 @@ const RegisterScreen = (props) => {
             label="First Name"
             returnKeyType="next"
             value={name.value}
-            onChangeText={(text) => setName({value: text, error: ''})}
+            onChangeText={text => setName({value: text, error: ''})}
             error={!!name.error}
             errorText={name.error}
             autoCapitalize="words"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._nameinput = ref;
             }}
-            onSubmitEditing={() =>
-              this._lastinput && this._lastinput.focus()
-            }
+            onSubmitEditing={() => this._lastinput && this._lastinput.focus()}
           />
           <TextInput
             //   style={styles.nameInputText}
             label="Last Name"
             returnKeyType="next"
             value={lastName.value}
-            onChangeText={(text) => setLastName({value: text, error: ''})}
+            onChangeText={text => setLastName({value: text, error: ''})}
             error={!!lastName.error}
             errorText={lastName.error}
             autoCapitalize="words"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._lastinput = ref;
             }}
-            onSubmitEditing={() =>
-              this._emailinput && this._emailinput.focus()
-            }
+            onSubmitEditing={() => this._emailinput && this._emailinput.focus()}
           />
           <TextInput
             //   style={styles.emailInputText}
             label="Email"
             returnKeyType="next"
             value={email.value}
-            onChangeText={(text) => setEmail({value: text, error: ''})}
+            onChangeText={text => setEmail({value: text, error: ''})}
             error={!!email.error}
             errorText={email.error}
             autoCapitalize="none"
             autoCompleteType="email"
             textContentType="emailAddress"
             keyboardType="email-address"
-            ref={(ref) => {
+            ref={ref => {
               this._emailinput = ref;
             }}
-            onSubmitEditing={() =>
-              this._phoneinput && this._phoneinput.focus()
-            }
+            onSubmitEditing={() => this._phoneinput && this._phoneinput.focus()}
           />
           <TextInput
             //   style={styles.phoneInputText}
             label="Phone"
             returnKeyType="next"
             value={phone.value}
-            onChangeText={(text) => setPhone({value: text, error: ''})}
+            onChangeText={text => setPhone({value: text, error: ''})}
             error={!!phone.error}
             errorText={phone.error}
             autoCapitalize="none"
@@ -566,13 +582,18 @@ const RegisterScreen = (props) => {
             textContentType="telephoneNumber"
             maxLength={10}
             keyboardType="phone-pad"
-            ref={(ref) => {
+            ref={ref => {
               this._phoneinput = ref;
             }}
             onSubmitEditing={() =>
               this._addressinput && this._addressinput.focus()
             }
-            left={<Input.Affix customTextStyle={{ marginRight: 12 }} text={`${AppConstants.country_code} `} />}
+            left={
+              <Input.Affix
+                customTextStyle={{marginRight: 12}}
+                text={`${AppConstants.country_code} `}
+              />
+            }
           />
           {/* <TextInput
             //   style={styles.nameInputText}
@@ -623,20 +644,19 @@ const RegisterScreen = (props) => {
         <TouchableOpacity
           style={styles.registerButton}
           onPress={() => props.navigation.pop()}>
-          <Text style={styles.haveAnAccountText}>
-            Already have an account?
-          </Text>
+          <Text style={styles.haveAnAccountText}>Already have an account?</Text>
           <Text style={styles.registerText}>Login</Text>
         </TouchableOpacity>
       </>
-    )
-  }
+    );
+  };
 
   const step2Verification = () => {
     return (
       <View style={{padding: 16}}>
-        <Text style={styles.subTitleText}>{"An authentication code has been sent to "}
-          <Text style={{ color: Colors.accentColor }}>
+        <Text style={styles.subTitleText}>
+          {'An authentication code has been sent to '}
+          <Text style={{color: Colors.accentColor}}>
             {`${AppConstants.country_code} ${phone.value}`}
           </Text>
         </Text>
@@ -664,7 +684,7 @@ const RegisterScreen = (props) => {
               if (!validateOnlyNumber(code)) {
                 return;
               }
-              setOtp({value: code, error: ''})
+              setOtp({value: code, error: ''});
               /* this.setState({otp: '' + code, errorMessage: ''}, () => {
                 let tIsDisable = true;
                 if (this.state.otp.length == 4) {
@@ -698,24 +718,24 @@ const RegisterScreen = (props) => {
                   fontSize: 16,
                   color: Colors.subTitleTextColor,
                   textAlign: 'center',
-                  fontFamily: "SofiaPro-Regular"
+                  fontFamily: 'SofiaPro-Regular',
                 }}>
                 {"Didn't receive OTP? "}
               </Text>
               <TouchableOpacity
                 onPress={() => {
                   Keyboard.dismiss();
-                  startTimer()
-                  let phoneNumberWithCode = `${AppConstants.country_code} ${phone.value}`
-                  signInWithPhoneNumber(phoneNumberWithCode, true)
+                  startTimer();
+                  let phoneNumberWithCode = `${AppConstants.country_code} ${phone.value}`;
+                  signInWithPhoneNumber(phoneNumberWithCode, true);
                 }}>
                 <Text
                   style={{
                     fontSize: 16,
                     color: Colors.primaryColor,
-                    fontFamily: "SofiaPro-Regular"
+                    fontFamily: 'SofiaPro-Regular',
                   }}>
-                  {" Resend Code"}
+                  {' Resend Code'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -726,14 +746,14 @@ const RegisterScreen = (props) => {
                   fontSize: 16,
                   color: Colors.subTitleTextColor,
                   textAlign: 'center',
-                  fontFamily: "SofiaPro-Regular"
+                  fontFamily: 'SofiaPro-Regular',
                 }}>
-                {"Code sent. Resend code in "}
+                {'Code sent. Resend code in '}
                 <Text
                   style={{
                     fontSize: 16,
                     color: Colors.subTitleTextColor,
-                    fontFamily: "SofiaPro-Regular"
+                    fontFamily: 'SofiaPro-Regular',
                   }}>
                   {timer + seconds}
                 </Text>
@@ -742,94 +762,96 @@ const RegisterScreen = (props) => {
           )}
         </View>
       </View>
-    )
-  }
+    );
+  };
 
   const onPressAddressItem = (data, details) => {
-    console.log(`data: ${JSON.stringify(data)}`)
-    console.log(`details: ${JSON.stringify(details)}`)
+    console.log(`data: ${JSON.stringify(data)}`);
+    console.log(`details: ${JSON.stringify(details)}`);
     var componentList = details.adr_address.split(', ');
 
-    let flatDetails = ''  // ? extended-address
-    let area = ''         // ? street-address
-    let city = ''         // ? locality
-    let state = ''        // ? region
-    let country = ''      // ? country-name
-    let pincode = ''      // ? postal-code
+    let flatDetails = ''; // ? extended-address
+    let area = ''; // ? street-address
+    let city = ''; // ? locality
+    let state = ''; // ? region
+    let country = ''; // ? country-name
+    let pincode = ''; // ? postal-code
 
     for (const component of details.address_components) {
       const componentType = component.types[0];
-  
+
       switch (componentType) {
-        case "street_number": {
+        case 'street_number': {
           flatDetails = `${component.long_name}`;
           break;
         }
-  
+
         /* case "route": {
           flatDetails += component.short_name;
           break;
         } */
 
-        case "sublocality_level_2": {
-          flatDetails = flatDetails === '' ? '' : `${flatDetails}, ` + `${component.long_name}`;
+        case 'sublocality_level_2': {
+          flatDetails =
+            flatDetails === ''
+              ? ''
+              : `${flatDetails}, ` + `${component.long_name}`;
           break;
         }
-  
-        case "route": {
+
+        case 'route': {
           area += component.long_name;
           break;
         }
-  
-        case "postal_code_suffix": {
+
+        case 'postal_code_suffix': {
           pincode = `${pincode}-${component.long_name}`;
           break;
         }
 
-        case "locality": {
+        case 'locality': {
           city = component.long_name;
           break;
         }
 
-        case "administrative_area_level_1": {
+        case 'administrative_area_level_1': {
           state = component.short_name;
           break;
         }
 
-        case "country": {
+        case 'country': {
           country = component.long_name;
           break;
         }
 
-        case "postal_code": {
+        case 'postal_code': {
           pincode = `${component.long_name}${pincode}`;
           break;
         }
       }
     }
 
-    setFlatName({value: flatDetails, error: ''})
-    setArea({value: area, error: ''})
-    setCity({value: city, error: ''})
-    setState({value: state, error: ''})
-    setCountry({value: country, error: ''})
-    setPincode({value: pincode, error: ''})
-    
+    setFlatName({value: flatDetails, error: ''});
+    setArea({value: area, error: ''});
+    setCity({value: city, error: ''});
+    setState({value: state, error: ''});
+    setCountry({value: country, error: ''});
+    setPincode({value: pincode, error: ''});
+
     if (ref) {
       ref.current?.setAddressText(flatDetails);
     }
-  }
+  };
 
   const step3AddressView = () => {
     return (
       <View>
         <View style={{padding: 16}}>
-          <ScrollView 
+          <ScrollView
             horizontal={true}
-            style={{ flex: 1, marginBottom: 8 }}
-            contentContainerStyle={{ flex: 1 }}
-            keyboardShouldPersistTaps='always'
-          >
+            style={{flex: 1, marginBottom: 8}}
+            contentContainerStyle={{flex: 1}}
+            keyboardShouldPersistTaps="always">
             {/* <GooglePlacesAutocomplete
               ref={ref}
               placeholder="Flat name or Number"
@@ -891,52 +913,48 @@ const RegisterScreen = (props) => {
             label="Area"
             returnKeyType="next"
             value={area.value}
-            onChangeText={(text) => setArea({value: text, error: ''})}
+            onChangeText={text => setArea({value: text, error: ''})}
             error={!!area.error}
             errorText={area.error}
             autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._areainput = ref;
             }}
-            onSubmitEditing={() =>
-              this._cityinput && this._cityinput.focus()
-            }
+            onSubmitEditing={() => this._cityinput && this._cityinput.focus()}
           />
           <TextInput
             //   style={styles.nameInputText}
             label="City or Town"
             returnKeyType="next"
             value={city.value}
-            onChangeText={(text) => setCity({value: text, error: ''})}
+            onChangeText={text => setCity({value: text, error: ''})}
             error={!!city.error}
             errorText={city.error}
             autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._cityinput = ref;
             }}
-            onSubmitEditing={() =>
-              this._stateinput && this._stateinput.focus()
-            }
+            onSubmitEditing={() => this._stateinput && this._stateinput.focus()}
           />
           <TextInput
             //   style={styles.nameInputText}
             label="State"
             returnKeyType="next"
             value={state.value}
-            onChangeText={(text) => setState({value: text, error: ''})}
+            onChangeText={text => setState({value: text, error: ''})}
             error={!!state.error}
             errorText={state.error}
             autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._stateinput = ref;
             }}
             onSubmitEditing={() =>
@@ -948,14 +966,14 @@ const RegisterScreen = (props) => {
             label="Country"
             returnKeyType="next"
             value={country.value}
-            onChangeText={(text) => setCountry({value: text, error: ''})}
+            onChangeText={text => setCountry({value: text, error: ''})}
             error={!!country.error}
             errorText={country.error}
             autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._countryinput = ref;
             }}
             onSubmitEditing={() =>
@@ -967,34 +985,41 @@ const RegisterScreen = (props) => {
             label="Pincode"
             returnKeyType="next"
             value={pincode.value}
-            onChangeText={(text) => setPincode({value: text, error: ''})}
+            onChangeText={text => setPincode({value: text, error: ''})}
             error={!!pincode.error}
             errorText={pincode.error}
             autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="number-pad"
-            ref={(ref) => {
+            ref={ref => {
               this._pincodeinput = ref;
             }}
             onSubmitEditing={Keyboard.dismiss}
           />
-          
+
           <CheckboxInput
             label={
               <View>
-                <Text>I have read and accept the
+                <Text>
+                  I have read and accept the
                   <Text
                     onPress={() => {
-                      Linking.openURL(`https://roadferry.in/terms-of-service-customer.html`);
+                      Linking.openURL(
+                        `https://roadferry.in/terms-of-service-customer.html`,
+                      );
                     }}
-                    style={styles.tandcText}
-                  > Terms and Conditions</Text>
+                    style={styles.tandcText}>
+                    {' '}
+                    Terms and Conditions
+                  </Text>
                 </Text>
               </View>
             }
             checked={termsAndConditionsAgreed}
-            onPress={() => setTermsAndConditionsAgreed(!termsAndConditionsAgreed)}
+            onPress={() =>
+              setTermsAndConditionsAgreed(!termsAndConditionsAgreed)
+            }
           />
         </View>
         <TouchableOpacity
@@ -1003,8 +1028,8 @@ const RegisterScreen = (props) => {
           <Text style={styles.loginText}>SIGN UP</Text>
         </TouchableOpacity>
       </View>
-    )
-  }
+    );
+  };
 
   const registerView = () => {
     return (
@@ -1015,10 +1040,9 @@ const RegisterScreen = (props) => {
         />
         <SafeAreaView
           style={{flex: 1, backgroundColor: Colors.mainBackgroundColor}}>
-          <ScrollView 
+          <ScrollView
             style={styles.container}
-            keyboardShouldPersistTaps='always'
-          >
+            keyboardShouldPersistTaps="always">
             <Loader loading={isLoading} />
             <TouchableOpacity onPress={() => props.navigation.pop()}>
               <Image
@@ -1034,34 +1058,40 @@ const RegisterScreen = (props) => {
               stepCount={stepLabels.length}
               renderLabel={({position, stepStatus, label, currentPosition}) => {
                 return (
-                  <Text style={[position == currentPosition ? styles.registerText : styles.haveAnAccountText, {marginTop: 8, textAlign: 'center'}]}>
+                  <Text
+                    style={[
+                      position == currentPosition
+                        ? styles.registerText
+                        : styles.haveAnAccountText,
+                      {marginTop: 8, textAlign: 'center'},
+                    ]}>
                     {stepLabels[position]}
                   </Text>
-                )
+                );
               }}
               // onPress={onPageChange}
             />
             <View style={{flex: 1}}>
-              {currentPosition == 0 ?
-                step1GeneralDetails() 
-              : currentPosition == 1 ? 
-                step2Verification()
-              : step3AddressView() }
+              {currentPosition == 0
+                ? step1GeneralDetails()
+                : currentPosition == 1
+                ? step2Verification()
+                : step3AddressView()}
             </View>
           </ScrollView>
         </SafeAreaView>
       </>
     );
-  }
+  };
 
   return AppConstants.isAndroid ? (
-    <View style={{ flex: 1 }}>{registerView()}</View>
+    <View style={{flex: 1}}>{registerView()}</View>
   ) : (
     <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: '#fff' }}
-        behavior="padding"
-        enabled>
-        {registerView()}
+      style={{flex: 1, backgroundColor: '#fff'}}
+      behavior="padding"
+      enabled>
+      {registerView()}
     </KeyboardAvoidingView>
   );
 };
@@ -1093,7 +1123,7 @@ const styles = StyleSheet.create({
     fontFamily: 'SofiaPro-SemiBold',
     fontSize: RFPercentage(4),
     color: Colors.textColor,
-    marginBottom: 30
+    marginBottom: 30,
   },
   subTitleText: {
     margin: 16,
@@ -1240,8 +1270,8 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   tandcText: {
-    color: '#0000EE'
-  }
+    color: '#0000EE',
+  },
 });
 
 export default RegisterScreen;

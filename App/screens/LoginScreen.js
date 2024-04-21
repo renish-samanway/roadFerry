@@ -24,14 +24,15 @@ import Button from '../Components/Button';
 import TextInput from '../Components/TextInput';
 import PasswordTextInput from '../Components/PasswordTextInput';
 import AppPreference from '../helper/asyncStorage';
-// import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData';
+import * as fetchProfileDataActions from '../helper/Redux/store/actions/customer/profile/fetchProfileData';
 
-import {
-  phoneValidator
-} from '../helper/Validator';
+import {phoneValidator} from '../helper/Validator';
 import Loader from '../Components/Loader';
-import { setIsLoginUser, setLoginUserType } from '../../navigation/MainNavigation';
-import { NavigationActions, StackActions } from 'react-navigation';
+import {
+  setIsLoginUser,
+  setLoginUserType,
+} from '../../navigation/MainNavigation';
+import {NavigationActions, StackActions} from 'react-navigation';
 import AppConstants from '../helper/AppConstants';
 import {useDispatch} from 'react-redux';
 import {TextInput as Input} from 'react-native-paper';
@@ -39,11 +40,14 @@ import {TextInput as Input} from 'react-native-paper';
 // Load the main class.
 const resetDashboardAction = StackActions.reset({
   index: 0,
-  actions: [NavigationActions.navigate({ routeName: "Dashboard" })]
+  actions: [NavigationActions.navigate({routeName: 'Dashboard'})],
 });
 
-const LoginScreen = (props) => {
-  const [phone, setPhone] = useState({value: __DEV__?'9979774557':'', error: ''});
+const LoginScreen = props => {
+  const [phone, setPhone] = useState({
+    value: __DEV__ ? '9537386566' : '',
+    error: '',
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [confirm, setConfirm] = useState(null);
 
@@ -56,21 +60,20 @@ const LoginScreen = (props) => {
       [{text: 'OK', onPress: () => console.log('OK Pressed')}],
       {cancelable: false},
     );
-  }
+  };
 
-  // const clearUserData = () => {
-  //   console.log(`clearUserData`)
-  //   dispatch({
-  //     type: fetchProfileDataActions.FETCH_PROFILE_DATA,
-  //     fetchProfileData: [],
-  //     userUID: ''
-  //   });
-  // }
+  const clearUserData = () => {
+    dispatch({
+      type: fetchProfileDataActions.FETCH_PROFILE_DATA,
+      fetchProfileData: [],
+      userUID: '',
+    });
+  };
 
   useEffect(() => {
-    // clearUserData();
+    clearUserData();
     const willFocusSub = props.navigation.addListener('willFocus', () => {
-      // clearUserData();
+      clearUserData();
     });
 
     return () => {
@@ -80,16 +83,16 @@ const LoginScreen = (props) => {
 
   const onPressSkip = () => {
     // props.navigation.dispatch(resetDashboardAction)
-    console.log(`onPressSkip`)
+    console.log(`onPressSkip`);
     // props.navigation.pop(2)
     /* props.navigation.navigate({
       routeName: 'Dashboard',
     }); */
-    props.navigation.goBack()
-  }
+    props.navigation.goBack();
+  };
 
   async function signInWithPhoneNumber(phoneNumber) {
-    console.log(`phoneNumber: ${phoneNumber}`)
+    console.log(`phoneNumber: ${phoneNumber}`);
     // ! check user exist or not on database
     firestore()
       .collection('users')
@@ -101,38 +104,39 @@ const LoginScreen = (props) => {
         if (querySnapshot.size == 0) {
           setIsLoading(false);
           setTimeout(() => {
-            invalid()
-          }, 500)
+            invalid();
+          }, 500);
         } else {
-          console.log(`Sending code....`)
+          console.log(`Sending code....`);
           auth()
-          .signInWithPhoneNumber(phoneNumber)
-          .then(confirmResult => {
-            console.log(`SIGN IN WITH PHONE`, confirmResult);
-            // console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
-            console.log(`Code sent`)
-            setIsLoading(false);
-            props.navigation.navigate({
-              routeName: 'VerificationScreen',
-              params: {
-                isLogin: true,
-                phoneNumber: phone.value,
-                confirm: confirmResult,
-                loginData: querySnapshot
-              },
+            .signInWithPhoneNumber(phoneNumber)
+            .then(confirmResult => {
+              console.log(`SIGN IN WITH PHONE`, confirmResult);
+              // console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
+              console.log(`Code sent`);
+              setIsLoading(false);
+              props.navigation.navigate({
+                routeName: 'VerificationScreen',
+                params: {
+                  isLogin: true,
+                  phoneNumber: phone.value,
+                  confirm: confirmResult,
+                  loginData: querySnapshot,
+                },
+              });
+            })
+            .catch(error => {
+              setIsLoading(false);
+              alert(error.message);
+              console.log(error);
             });
-          })
-          .catch(error => {
-            setIsLoading(false);
-            alert(error.message)
-            console.log(error)
-          });
         }
-      }).catch(error => {
-        setIsLoading(false)
-        console.error(error)
+      })
+      .catch(error => {
+        setIsLoading(false);
+        console.error(error);
       });
-    return
+    return;
     // ! verify phone number with otp send
     /* auth()
     .verifyPhoneNumber(phoneNumber)
@@ -152,28 +156,28 @@ const LoginScreen = (props) => {
       .signInWithPhoneNumber(phoneNumber)
       .then(confirmResult => {
         // console.log(`confirmResult:`, confirmResult)
-        console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
+        console.log(`confirmResult: ${JSON.stringify(confirmResult)}`);
         setIsLoading(false);
         props.navigation.navigate({
           routeName: 'VerificationScreen',
           params: {
             isLogin: true,
             phoneNumber: phone.value,
-            confirm: confirmResult
+            confirm: confirmResult,
           },
         });
       })
       .catch(error => {
         setIsLoading(false);
-        alert(error.message)
-        console.log(error)
+        alert(error.message);
+        console.log(error);
       });
     //setConfirm(confirmation);
     //setIsLoading(false);
   }
 
   const onPressNewLogin = () => {
-    Keyboard.dismiss()
+    Keyboard.dismiss();
     const phoneError = phoneValidator(phone.value);
     if (phoneError) {
       setPhone({...phone, error: phoneError});
@@ -190,9 +194,9 @@ const LoginScreen = (props) => {
 
     return */
     setIsLoading(true);
-    let phoneNumber = `${AppConstants.country_code} ${phone.value}`
-    signInWithPhoneNumber(phoneNumber)
-  }
+    let phoneNumber = `${AppConstants.country_code} ${phone.value}`;
+    signInWithPhoneNumber(phoneNumber);
+  };
 
   /* const onPressLogin = () => {
     const emailError = emailValidator(email.value);
@@ -333,10 +337,11 @@ const LoginScreen = (props) => {
         />
         <SafeAreaView
           style={{flex: 1, backgroundColor: Colors.mainBackgroundColor}}>
-          <ScrollView style={styles.container}
-          keyboardShouldPersistTaps={'handled'}
-          automaticallyAdjustContentInsets={false}
-          showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.container}
+            keyboardShouldPersistTaps={'handled'}
+            automaticallyAdjustContentInsets={false}
+            showsVerticalScrollIndicator={false}>
             <Loader loading={isLoading} />
             {/* <TouchableOpacity onPress={() => props.navigation.pop()}>
               <Image
@@ -352,27 +357,32 @@ const LoginScreen = (props) => {
             </View>
             <Text style={styles.tilteText}>Login</Text>
             <View style={{padding: 16}}>
-            <TextInput
-              //   style={styles.phoneInputText}
-              label="Phone"
-              returnKeyType="next"
-              value={phone.value}
-              onChangeText={(text) => setPhone({value: text, error: ''})}
-              error={!!phone.error}
-              errorText={phone.error}
-              autoCapitalize="none"
-              autoCompleteType="tel"
-              textContentType="telephoneNumber"
-              maxLength={10}
-              keyboardType="phone-pad"
-              left={<Input.Affix customTextStyle={{ marginRight: 12 }} text={`${AppConstants.country_code} `} />}
-              /* ref={(ref) => {
+              <TextInput
+                //   style={styles.phoneInputText}
+                label="Phone"
+                returnKeyType="next"
+                value={phone.value}
+                onChangeText={text => setPhone({value: text, error: ''})}
+                error={!!phone.error}
+                errorText={phone.error}
+                autoCapitalize="none"
+                autoCompleteType="tel"
+                textContentType="telephoneNumber"
+                maxLength={10}
+                keyboardType="phone-pad"
+                left={
+                  <Input.Affix
+                    customTextStyle={{marginRight: 12}}
+                    text={`${AppConstants.country_code} `}
+                  />
+                }
+                /* ref={(ref) => {
                 this._phoneinput = ref;
               }} */
-              /* onSubmitEditing={() =>
+                /* onSubmitEditing={() =>
                 this._addressinput && this._addressinput.focus()
               } */
-            />
+              />
               {/* <PasswordTextInput
                 style={styles.passwordInputText}
                 label="Password"
@@ -399,7 +409,9 @@ const LoginScreen = (props) => {
               }>
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity> */}
-            <TouchableOpacity style={styles.buttonLogin} onPress={onPressNewLogin}>
+            <TouchableOpacity
+              style={styles.buttonLogin}
+              onPress={onPressNewLogin}>
               <Text style={styles.loginText}>LOGIN</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.buttonSkip} onPress={onPressSkip}>
@@ -421,16 +433,16 @@ const LoginScreen = (props) => {
         </SafeAreaView>
       </>
     );
-  }
+  };
 
   return AppConstants.isAndroid ? (
-    <View style={{ flex: 1 }}>{setLoginView()}</View>
+    <View style={{flex: 1}}>{setLoginView()}</View>
   ) : (
     <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: '#fff' }}
-        behavior="padding"
-        enabled>
-        {setLoginView()}
+      style={{flex: 1, backgroundColor: '#fff'}}
+      behavior="padding"
+      enabled>
+      {setLoginView()}
     </KeyboardAvoidingView>
   );
 };
@@ -481,7 +493,7 @@ const styles = StyleSheet.create({
   loginText: {
     fontFamily: 'SofiaPro-Medium',
     color: Colors.backgroundColor,
-    fontSize: RFPercentage(2)
+    fontSize: RFPercentage(2),
   },
   buttonSkip: {
     margin: 64,
@@ -491,7 +503,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     height: 60,
     borderRadius: 30,
-    borderColor: Colors.buttonColor
+    borderColor: Colors.buttonColor,
   },
   skipText: {
     fontFamily: 'SofiaPro-Medium',
