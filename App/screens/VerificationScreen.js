@@ -25,6 +25,7 @@ import Colors from '../helper/Color';
 import AppPreference from '../helper/preference/AppPreference';
 import {setIsLoginUser} from '../service/navigation/navigation';
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 // import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData'
 
 // Load the main class.
@@ -156,10 +157,10 @@ const VerificationScreen = props => {
                       access_token: token,
                       fcm_token: fcmToken,
                     };
-                    // firestore()
-                    // .collection('users')
-                    // .doc(documentSnapshot.id)
-                    // .update(updatedData)
+                    firestore()
+                      .collection('users')
+                      .doc(documentSnapshot.id)
+                      .update(updatedData);
 
                     let userData = {...documentSnapshot.data()};
                     userData.access_token = token;
@@ -201,39 +202,41 @@ const VerificationScreen = props => {
                     data.fcm_token = fcmToken;
                     data.access_token = token;
                     console.log(`data:`, data);
-                    // firestore()
-                    // .collection('users')
-                    // .doc(response.user.uid)
-                    // .set(data)
-                    // .then(querySnapshot => {
-                    //   // console.log('Total users: ', querySnapshot.size);
-                    //   setIsLoading(false);
-                    //   AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
-                    //   AsyncStorage.setItem(AppPreference.LOGIN_TOKEN,token);
-                    //   AsyncStorage.setItem(AppPreference.LOGIN_UID, response.user.uid).then(
-                    //     () => {
-                    //       console.log(`AsyncStorage.setItem.LOGIN_UID`)
-                    //       AsyncStorage.setItem(
-                    //         AppPreference.LOGIN_USER_DATA,
-                    //         JSON.stringify(data),
-                    //       ).then(() => {
-                    //         dispatch({
-                    //           type: fetchProfileDataActions.FETCH_PROFILE_DATA,
-                    //           fetchProfileData: data,
-                    //           userUID: response.user.uid
-                    //         });
+                    firestore()
+                      .collection('users')
+                      .doc(response.user.uid)
+                      .set(data)
+                      .then(querySnapshot => {
+                        // console.log('Total users: ', querySnapshot.size);
+                        setIsLoading(false);
+                        AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
+                        AsyncStorage.setItem(AppPreference.LOGIN_TOKEN, token);
+                        AsyncStorage.setItem(
+                          AppPreference.LOGIN_UID,
+                          response.user.uid,
+                        ).then(() => {
+                          console.log(`AsyncStorage.setItem.LOGIN_UID`);
+                          AsyncStorage.setItem(
+                            AppPreference.LOGIN_USER_DATA,
+                            JSON.stringify(data),
+                          ).then(() => {
+                            dispatch({
+                              type: fetchProfileDataActions.FETCH_PROFILE_DATA,
+                              fetchProfileData: data,
+                              userUID: response.user.uid,
+                            });
 
-                    //         setIsLoginUser(true)
-                    //         props.navigation.navigate({
-                    //           routeName: 'Dashboard',
-                    //         });
-                    //       })
-                    //     },
-                    //   );
-                    // }).catch(error => {
-                    //   setIsLoading(false);
-                    //   console.error(error)
-                    // });
+                            setIsLoginUser(true);
+                            props.navigation.navigate({
+                              routeName: 'Dashboard',
+                            });
+                          });
+                        });
+                      })
+                      .catch(error => {
+                        setIsLoading(false);
+                        console.error(error);
+                      });
                   }
                 });
               });
@@ -312,7 +315,7 @@ const VerificationScreen = props => {
             <View style={{padding: 16}}>
               <OTPInputView
                 pinCount={6}
-                // ref={textInputRef}
+                ref={textInputRef}
                 autoFocusOnLoad={true}
                 style={{height: 64, alignSelf: 'center', width: '94%'}}
                 codeInputFieldStyle={{
@@ -324,26 +327,22 @@ const VerificationScreen = props => {
                   color: Colors.textColor,
                   fontSize: 20,
                 }}
-                // codeInputHighlightStyle={{
-                //   borderColor: Colors.primaryColor,
-                //   borderWidth: 3,
-                // }}
-                // onCodeChanged={code => {
-                //   if (!validateOnlyNumber(code)) {
-                //     return;
-                //   }
-                //   setOtp({value: code, error: ''})
-                // }}
+                codeInputHighlightStyle={{
+                  borderColor: Colors.primaryColor,
+                  borderWidth: 3,
+                }}
+                onCodeChanged={code => {
+                  if (!validateOnlyNumber(code)) {
+                    return;
+                  }
+                  setOtp({value: code, error: ''});
+                }}
               />
               {otp.error == '' ? null : (
                 <Text style={styles.errorText}>{otp.error}</Text>
               )}
             </View>
-            <TouchableOpacity
-              style={styles.buttonLogin}
-              onPress={() => {
-                onPressLogin();
-              }}>
+            <TouchableOpacity style={styles.buttonLogin} onPress={onPressLogin}>
               <Text style={styles.loginText}>SUBMIT</Text>
             </TouchableOpacity>
 
