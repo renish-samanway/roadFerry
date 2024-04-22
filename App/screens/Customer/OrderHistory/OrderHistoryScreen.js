@@ -17,11 +17,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import Colors from '../../../helper/extensions/Colors';
 import {OrderHistroyData} from '../../../helper/extensions/dummyData';
-import SelectParcel from '../../../components/Customer/AddParcelDetails/SelectParcel';
-import * as getOrderHistoryDataActions from '../../../store/actions/customer/orderHistory/getOrderHistoryData';
-import AppPreference from '../../../helper/preference/AppPreference';
-import EmptyData from '../../../components/design/EmptyData';
-import Loader from '../../../components/design/Loader';
+import SelectParcel from '../../../../src/components/Customer/AddParcelDetails/SelectParcel';
+import * as getOrderHistoryDataActions from '../../../../src/store/actions/customer/orderHistory/getOrderHistoryData';
+import AppPreference from '../../../../src/helper/preference/AppPreference';
+import EmptyData from '../../../../src/components/design/EmptyData';
+import Loader from '../../../../src/components/design/Loader';
 // import { NavigationActions, StackActions } from 'react-navigation';
 
 // Load the main class.

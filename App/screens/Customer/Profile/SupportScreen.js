@@ -16,7 +16,7 @@ import { RFPercentage } from "react-native-responsive-fontsize";
 // Import the JS file.
 
 import Colors from "../../../helper/extensions/Colors";
-import ProfileButton from "../../../components/Customer/Profile/ProfileButton";
+import ProfileButton from "../../../../src/components/Customer/Profile/ProfileButton";
 import TextInput from "../../../components/design/TextInput";
 import {
   nameValidator,

@@ -18,9 +18,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Import the JS file.
 
 import Colors from '../../../helper/extensions/Colors';
-import ProfileButton from '../../../components/Customer/Profile/ProfileButton';
-import ProfileData from '../../../components/Customer/Profile/ProfileData';
-import * as fetchProfileDataActions from '../../../store/actions/customer/profile/fetchProfileData';
+import ProfileData from '../../../../src/components/Customer/Profile/ProfileData';
+import * as fetchProfileDataActions from '../../../../src/store/actions/customer/profile/fetchProfileData';
 import AppPreference from '../../../helper/preference/AppPreference';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 

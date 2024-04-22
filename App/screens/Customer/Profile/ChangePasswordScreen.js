@@ -15,7 +15,7 @@ import {
 // Import the JS file.
 
 import Colors from '../../../helper/extensions/Colors';
-import TextInput from '../../../components/design/TextInput';
+import TextInput from '../../../Components/TextInput';
 import {
   oldPasswordValidator,
   newPasswordValidator,
@@ -25,7 +25,7 @@ import {
 import {RFPercentage} from 'react-native-responsive-fontsize';
 // Load the main class.
 import { firebase } from '@react-native-firebase/database';
-import Loader from '../../../components/design/Loader';
+import Loader from '../../../Components/Loader';
 import Modal from 'react-native-modal';
 
 const windowWidth = Dimensions.get('window').width;

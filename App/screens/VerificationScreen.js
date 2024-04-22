@@ -26,7 +26,7 @@ import AppPreference from '../helper/preference/AppPreference';
 import {setIsLoginUser} from '../service/navigation/navigation';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-// import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData'
+import * as fetchProfileDataActions from '../helper/Redux/store/actions/customer/profile/fetchProfileData';
 
 // Load the main class.
 let setOpenTime = moment(new Date());
@@ -145,11 +145,12 @@ const VerificationScreen = props => {
                 );
                 AsyncStorage.setItem(AppPreference.LOGIN_TOKEN, token);
 
-                AsyncStorage.getItem(AppPreference.FCM_TOKEN).then(fcmToken => {
-                  if (fcmToken == null) {
+                AsyncStorage.getItem(AppPreference.FCM_TOKEN).then(token => {
+                  if (!token == null) {
                     setIsLoading(false);
-                    console.log(`AppPreference.FCM_TOKEN.null`);
+                    console.log(`AppPreference.FCM_TOKEN.null 1`);
                   } else {
+                    let fcmToken='dummyFcmToken';
                     setIsLoading(false);
                     console.log(`AppPreference.FCM_TOKEN:`, fcmToken);
 
@@ -171,11 +172,11 @@ const VerificationScreen = props => {
                       AppPreference.LOGIN_USER_DATA,
                       JSON.stringify(userData),
                     ).then(() => {
-                      // dispatch({
-                      //   type: fetchProfileDataActions.FETCH_PROFILE_DATA,
-                      //   fetchProfileData: documentSnapshot.data(),
-                      //   userUID: documentSnapshot.id
-                      // });
+                      dispatch({
+                        type: fetchProfileDataActions.FETCH_PROFILE_DATA,
+                        fetchProfileData: documentSnapshot.data(),
+                        userUID: documentSnapshot.id
+                      });
 
                       setIsLoginUser(true);
                       props.navigation.navigate({
@@ -196,7 +197,7 @@ const VerificationScreen = props => {
                 AsyncStorage.getItem(AppPreference.FCM_TOKEN).then(fcmToken => {
                   if (fcmToken == null) {
                     setIsLoading(false);
-                    console.log(`AppPreference.FCM_TOKEN.null`);
+                    console.log(`AppPreference.FCM_TOKEN.null 2`);
                   } else {
                     console.log(`AppPreference.FCM_TOKEN:`, fcmToken);
                     data.fcm_token = fcmToken;

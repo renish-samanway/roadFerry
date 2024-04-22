@@ -18,7 +18,7 @@ import {RFPercentage} from 'react-native-responsive-fontsize';
 import Colors from '../../../helper/extensions/Colors';
 import AppPreference from '../../../helper/preference/AppPreference';
 import firestore from '@react-native-firebase/firestore';
-import Loader from '../../../components/design/Loader';
+import Loader from '../../../Components/Loader';
 import moment from 'moment';
 
 // Load the main class.
