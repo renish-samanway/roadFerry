@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import {
   historyStatus,
   OrderHistroyData,
 } from '../../../helper/extensions/dummyData';
-import SelectParcel from '../../../components/Customer/AddParcelDetails/SelectParcel';
+import SelectParcel from '../../../../src/components/Customer/AddParcelDetails/SelectParcel';
 import * as getOrderHistoryDataActions from '../../../store/actions/customer/orderHistory/getOrderHistoryData';
 import {useSelector, useDispatch} from 'react-redux';
 import EmptyData from '../../../components/design/EmptyData';
@@ -27,7 +27,7 @@ import EmptyData from '../../../components/design/EmptyData';
 // Load the main class.
 const windowWidth = Dimensions.get('window').width;
 
-const ParcelHistoryScreen = (props) => {
+const ParcelHistoryScreen = props => {
   const selectedHistoryStatus = props.navigation.getParam('historyStatus');
   let pendingData = props.navigation.getParam('pendingData');
   let ongoingData = props.navigation.getParam('ongoingData');
@@ -37,38 +37,38 @@ const ParcelHistoryScreen = (props) => {
   const dispatch = useDispatch();
   const loadOrderHistoryData = useCallback(async () => {
     // AsyncStorage.getItem(AppPreference.LOGIN_UID).then((valueUID) => {
-      let valueUID = "B4Ti8IgLgpsKZECGqOJ0" //transporter login user id
-      console.log('UID IS : ', valueUID);
-      try {
-        dispatch(getOrderHistoryDataActions.getCustomerOrderData(valueUID, true));
-      } catch (err) {
-        console.log('Error is : ', err);
-      }
+    let valueUID = 'B4Ti8IgLgpsKZECGqOJ0'; //transporter login user id
+    console.log('UID IS : ', valueUID);
+    try {
+      dispatch(getOrderHistoryDataActions.getCustomerOrderData(valueUID, true));
+    } catch (err) {
+      console.log('Error is : ', err);
+    }
     // });
   }, [dispatch]);
 
   refreshData = () => {
     loadOrderHistoryData().then(() => {
       pendingData = useSelector(
-        (state) => state.customerPendingOrderData.customerPendingOrderData,
+        state => state.customerPendingOrderData.customerPendingOrderData,
       );
 
       ongoingData = useSelector(
-        (state) => state.customerOngoingOrderData.customerOngoingOrderData,
+        state => state.customerOngoingOrderData.customerOngoingOrderData,
       );
 
       completedData = useSelector(
-        (state) => state.customerCompletedOrderData.customerCompletedOrderData,
+        state => state.customerCompletedOrderData.customerCompletedOrderData,
       );
 
       rejectedData = useSelector(
-        (state) => state.customerRejectedOrderData.customerRejectedOrderData,
+        state => state.customerRejectedOrderData.customerRejectedOrderData,
       );
     });
-  }
+  };
 
-  const renderPendingHistroyData = (itemData) => {
-    console.log(`itemData: ${JSON.stringify(itemData)}`)
+  const renderPendingHistroyData = itemData => {
+    console.log(`itemData: ${JSON.stringify(itemData)}`);
     return (
       <TouchableOpacity
         style={styles.historyView}
@@ -81,7 +81,9 @@ const ParcelHistoryScreen = (props) => {
           })
         }>
         <View style={styles.itemRow}>
-          <Text style={styles.unSelectedStatusText}>#{itemData.item.order_id}</Text>
+          <Text style={styles.unSelectedStatusText}>
+            #{itemData.item.order_id}
+          </Text>
           <Text style={styles.titleText}>₹ {itemData.item.price}</Text>
         </View>
         <View style={styles.textView}>
@@ -90,10 +92,17 @@ const ParcelHistoryScreen = (props) => {
           </Text>
           <Text style={styles.subTitleText}>-- to --</Text>
           <Text style={styles.titleText} numberOfLines={1}>
-            {itemData.item.drop_location && itemData.item.drop_location.city != null ? itemData.item.drop_location.city : '[drop_location.city]'}
+            {itemData.item.drop_location &&
+            itemData.item.drop_location.city != null
+              ? itemData.item.drop_location.city
+              : '[drop_location.city]'}
           </Text>
         </View>
-        <SelectParcel isTransporter={true} parcelHistory={true} data={itemData.item.drop_location}/>
+        <SelectParcel
+          isTransporter={true}
+          parcelHistory={true}
+          data={itemData.item.drop_location}
+        />
         <View style={styles.itemRow}>
           <TouchableOpacity style={styles.detailView}>
             <Text style={styles.detailText}>Details</Text>
@@ -112,7 +121,7 @@ const ParcelHistoryScreen = (props) => {
     );
   };
 
-  const renderCompletedHistroyData = (itemData) => {
+  const renderCompletedHistroyData = itemData => {
     return (
       <TouchableOpacity
         style={styles.historyView}
@@ -150,7 +159,7 @@ const ParcelHistoryScreen = (props) => {
     );
   };
 
-  const renderOngoingdHistroyData = (itemData) => {
+  const renderOngoingdHistroyData = itemData => {
     return (
       <TouchableOpacity
         style={styles.completedHistoryMainView}
@@ -207,7 +216,7 @@ const ParcelHistoryScreen = (props) => {
     );
   };
 
-  const renderRejectedHistroyData = (itemData) => {
+  const renderRejectedHistroyData = itemData => {
     return (
       <TouchableOpacity
         style={styles.historyView}
@@ -244,7 +253,7 @@ const ParcelHistoryScreen = (props) => {
 
   const [selectedIndex, setSelectedIndex] = useState(selectedHistoryStatus);
 
-  const historyStatusData = (itemData) => {
+  const historyStatusData = itemData => {
     return (
       <TouchableOpacity
         style={
@@ -276,47 +285,63 @@ const ParcelHistoryScreen = (props) => {
           showsHorizontalScrollIndicator={false}
         />
       </View>
-      {selectedIndex === 0 ?
-        pendingData.length != 0 ? <FlatList
-          style={{marginBottom: 16}}
-          keyExtractor={(item, index) => item.id}
-          data={pendingData}
-          renderItem={renderPendingHistroyData}
-          showsVerticalScrollIndicator={false}
-        /> : <EmptyData data={"pending data"} />
-      : null }
-      {selectedIndex === 1 ?
-        ongoingData.length != 0 ? <FlatList
-          style={{marginBottom: 16}}
-          keyExtractor={(item, index) => item.id}
-          data={ongoingData}
-          renderItem={renderOngoingdHistroyData}
-          showsVerticalScrollIndicator={false}
-        /> : <EmptyData data={"ongoing data"} />
-      : null}
-      {selectedIndex === 2 ?
-        completedData.length != 0 ? <FlatList
-          style={{marginBottom: 16}}
-          keyExtractor={(item, index) => item.id}
-          data={completedData}
-          renderItem={renderCompletedHistroyData}
-          showsVerticalScrollIndicator={false}
-        /> : <EmptyData data={"completed data"} />
-      : null }
-      {selectedIndex === 3 ?
-        rejectedData.length != 0 ? <FlatList
-          style={{marginBottom: 16, borderWidth: 2}}
-          keyExtractor={(item, index) => item.id}
-          data={rejectedData}
-          renderItem={renderRejectedHistroyData}
-          showsVerticalScrollIndicator={false}
-        /> : <EmptyData data={"rejected data"} />
-      : null }
+      {selectedIndex === 0 ? (
+        pendingData.length != 0 ? (
+          <FlatList
+            style={{marginBottom: 16}}
+            keyExtractor={(item, index) => item.id}
+            data={pendingData}
+            renderItem={renderPendingHistroyData}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <EmptyData data={'pending data'} />
+        )
+      ) : null}
+      {selectedIndex === 1 ? (
+        ongoingData.length != 0 ? (
+          <FlatList
+            style={{marginBottom: 16}}
+            keyExtractor={(item, index) => item.id}
+            data={ongoingData}
+            renderItem={renderOngoingdHistroyData}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <EmptyData data={'ongoing data'} />
+        )
+      ) : null}
+      {selectedIndex === 2 ? (
+        completedData.length != 0 ? (
+          <FlatList
+            style={{marginBottom: 16}}
+            keyExtractor={(item, index) => item.id}
+            data={completedData}
+            renderItem={renderCompletedHistroyData}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <EmptyData data={'completed data'} />
+        )
+      ) : null}
+      {selectedIndex === 3 ? (
+        rejectedData.length != 0 ? (
+          <FlatList
+            style={{marginBottom: 16, borderWidth: 2}}
+            keyExtractor={(item, index) => item.id}
+            data={rejectedData}
+            renderItem={renderRejectedHistroyData}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <EmptyData data={'rejected data'} />
+        )
+      ) : null}
     </View>
   );
 };
 
-ParcelHistoryScreen.navigationOptions = (navigationData) => {
+ParcelHistoryScreen.navigationOptions = navigationData => {
   return {
     headerShown: true,
     headerTitle: 'Parcel History',

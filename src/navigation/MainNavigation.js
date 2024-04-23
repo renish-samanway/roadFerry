@@ -68,17 +68,17 @@ import AppPreference from '../helper/preference/AppPreference';
 import * as fetchProfileDataActions from '../store/actions/customer/profile/fetchProfileData';
 import {useDispatch} from 'react-redux';
 import Session from '../helper/Session';
-import { firebase } from '@react-native-firebase/database';
+import {firebase} from '@react-native-firebase/database';
 import TrackOrder from '../screens/Customer/TrackOrder';
 
-var isLoginUser = false
-export const setIsLoginUser = (tIsLoginUser) => {
-  isLoginUser = tIsLoginUser
-}
+var isLoginUser = false;
+export const setIsLoginUser = tIsLoginUser => {
+  isLoginUser = tIsLoginUser;
+};
 
 export const getIsLoginUser = () => {
-    return isLoginUser
-}
+  return isLoginUser;
+};
 
 const Auth = createStackNavigator({
   LoginScreen: {
@@ -362,8 +362,8 @@ const DashboardScreenNavigator = createStackNavigator(
     TrackOrder: {
       screen: TrackOrder,
       navigationOptions: {
-        headerShown: true
-      }
+        headerShown: true,
+      },
     },
   },
   {
@@ -371,7 +371,7 @@ const DashboardScreenNavigator = createStackNavigator(
       // headerShown: true,
       // headerTitle: false,
       drawerLabel: 'Dashboard',
-      drawerIcon: (tabInfo) => (
+      drawerIcon: tabInfo => (
         <Image
           style={[styles.homeLeftImage, {tintColor: 'white'}]}
           source={require('../../src/assets/assets/navigation/ic_dashboard.png')}
@@ -412,7 +412,7 @@ const OrderHistoryScreenNavigator = createStackNavigator(
   {
     navigationOptions: {
       drawerLabel: 'Parcel History',
-      drawerIcon: (tabInfo) => (
+      drawerIcon: tabInfo => (
         <Image
           style={[styles.homeLeftImage]}
           source={require('../../src/assets/assets/navigation/ic_history.png')}
@@ -441,7 +441,7 @@ const ProfileScreenNavigator = createStackNavigator(
   {
     navigationOptions: {
       drawerLabel: 'My Profile',
-      drawerIcon: (tabInfo) => (
+      drawerIcon: tabInfo => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_profile.png')}
@@ -458,7 +458,7 @@ const NotificationScreenNavigator = createStackNavigator(
   {
     navigationOptions: {
       drawerLabel: 'Notification',
-      drawerIcon: (tabInfo) => (
+      drawerIcon: tabInfo => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_notifications.png')}
@@ -475,7 +475,7 @@ const ChangePasswordScreenNavigator = createStackNavigator(
   {
     navigationOptions: {
       drawerLabel: 'Change Password',
-      drawerIcon: (tabInfo) => (
+      drawerIcon: tabInfo => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_password.png')}
@@ -492,7 +492,7 @@ const DeliveryAddressScreenNavigator = createStackNavigator(
   {
     navigationOptions: {
       drawerLabel: 'Delivery Address',
-      drawerIcon: (tabInfo) => (
+      drawerIcon: tabInfo => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_delivery.png')}
@@ -509,7 +509,7 @@ const SupportScreenNavigator = createStackNavigator(
   {
     navigationOptions: {
       drawerLabel: 'Contact Us',
-      drawerIcon: (tabInfo) => (
+      drawerIcon: tabInfo => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_contact.png')}
@@ -580,7 +580,7 @@ const SettingsScreenNavigator = createStackNavigator(
   {
     navigationOptions: {
       drawerLabel: 'Settings',
-      drawerIcon: (tabInfo) => (
+      drawerIcon: tabInfo => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_settings.png')}
@@ -615,7 +615,7 @@ const DriverModuleScreenNavigator = createStackNavigator(
   {
     navigationOptions: {
       drawerLabel: 'Driver Module',
-      drawerIcon: (tabInfo) => (
+      drawerIcon: tabInfo => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_settings.png')}
@@ -661,7 +661,7 @@ const MainDrawerNavigator = createDrawerNavigator(
     labelStyle: {
       fontSize: 14,
     },
-    contentComponent: (props) => {
+    contentComponent: props => {
       // console.log(`isLoginUser: ${isLoginUser}`)
       return (
         <View style={{flex: 1}}>
@@ -685,18 +685,18 @@ const MainDrawerNavigator = createDrawerNavigator(
                         text: 'Ok',
                         onPress: () => {
                           // const dispatch = useDispatch();
-                          firebase.auth().signOut()
-                          Session.removeAll()
+                          firebase.auth().signOut();
+                          Session.removeAll();
                           // AsyncStorage.clear();
                           // AsyncStorage.setItem(AppPreference.IS_SLIDER, '1');
-                          isLoginUser = false
+                          isLoginUser = false;
                           props.navigation.closeDrawer();
                           props.navigation.navigate('LoginScreen');
                         },
                       },
                     ],
                     {cancelable: false},
-                  )
+                  );
                 } else {
                   props.navigation.navigate('LoginScreen');
                 }
@@ -705,11 +705,14 @@ const MainDrawerNavigator = createDrawerNavigator(
                 style={styles.logoutImage}
                 source={require('../../src/assets/assets/navigation/ic_logout.png')}
               />
-              <Text style={styles.logoutText}>{isLoginUser ? 'Logout' : 'Login'}</Text>
+              <Text style={styles.logoutText}>
+                {isLoginUser ? 'Logout' : 'Login'}
+              </Text>
             </TouchableOpacity>
           </SafeAreaView>
         </View>
-    )},
+      );
+    },
     drawerOpenRoute: 'DrawerOpen',
     drawerCloseRoute: 'DrawerClose',
     drawerToggleRoute: 'DrawerToggle',
@@ -738,4 +741,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default createAppContainer(MainDrawerNavigator);
+export default createAppContainer(Slider);

@@ -8,7 +8,7 @@
 import React from 'react';
 import {Provider} from 'react-redux';
 import {combineReducers, createStore} from 'redux';
-import Navigator from './App/service/navigation/navigation';
+import Navigator from './src/navigation/MainNavigation';
 
 import userlistReducer from './App/helper/Redux/store/reducers/dashboard/userlist';
 import addressSetReducer from './App/helper/Redux/store/reducers/dashboard/setSourceValue';

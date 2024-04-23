@@ -21,45 +21,46 @@ import {RFPercentage, RFValue} from 'react-native-responsive-fontsize';
 // Import the JS file.
 
 import Colors from '../../../helper/extensions/Colors';
-import RecentOrder from '../../../components/transpoter/Dashboard/RecentOrder';
-import * as getOrderHistoryDataActions from '../../../store/actions/customer/orderHistory/getOrderHistoryData';
+
+import RecentOrder from '../../../../src/components/transpoter/Dashboard/RecentOrder';
+import * as getOrderHistoryDataActions from '../../../../src/store/actions/customer/orderHistory/getOrderHistoryData';
 
 // Load the main class.
 
 const windowHeight = Dimensions.get('window').height;
 
-const TranspoterDashboardScreen = (props) => {
+const TranspoterDashboardScreen = props => {
   /* const [pendingCount, setPendingCount] = useState(0);
   const [ongoingCount, setOngoingCount] = useState(0);
   const [acceptedCount, setAcceptedCount] = useState(0);
   const [rejectedCount, setRejectedCount] = useState(0); */
 
   const pendingData = useSelector(
-    (state) => state.customerPendingOrderData.customerPendingOrderData,
+    state => state.customerPendingOrderData.customerPendingOrderData,
   );
 
   const ongoingData = useSelector(
-    (state) => state.customerOngoingOrderData.customerOngoingOrderData,
+    state => state.customerOngoingOrderData.customerOngoingOrderData,
   );
 
   const completedData = useSelector(
-    (state) => state.customerCompletedOrderData.customerCompletedOrderData,
+    state => state.customerCompletedOrderData.customerCompletedOrderData,
   );
 
   const rejectedData = useSelector(
-    (state) => state.customerRejectedOrderData.customerRejectedOrderData,
+    state => state.customerRejectedOrderData.customerRejectedOrderData,
   );
 
   const dispatch = useDispatch();
   const loadOrderHistoryData = useCallback(async () => {
     // AsyncStorage.getItem(AppPreference.LOGIN_UID).then((valueUID) => {
-      let valueUID = "B4Ti8IgLgpsKZECGqOJ0" //transporter login user id
-      console.log('UID IS : ', valueUID);
-      try {
-        dispatch(getOrderHistoryDataActions.getCustomerOrderData(valueUID, true));
-      } catch (err) {
-        console.log('Error is : ', err);
-      }
+    let valueUID = 'B4Ti8IgLgpsKZECGqOJ0'; //transporter login user id
+    console.log('UID IS : ', valueUID);
+    try {
+      dispatch(getOrderHistoryDataActions.getCustomerOrderData(valueUID, true));
+    } catch (err) {
+      console.log('Error is : ', err);
+    }
     // });
   }, [dispatch]);
 
@@ -87,7 +88,7 @@ const TranspoterDashboardScreen = (props) => {
     // console.log(`pendingData: ${pendingData}`)
   });
 
-  openParcelHistoryScreen = (index) => {
+  openParcelHistoryScreen = index => {
     props.navigation.navigate({
       routeName: 'ParcelHistoryScreen',
       params: {
@@ -95,10 +96,10 @@ const TranspoterDashboardScreen = (props) => {
         pendingData: pendingData,
         ongoingData: ongoingData,
         completedData: completedData,
-        rejectedData: rejectedData
+        rejectedData: rejectedData,
       },
-    })
-  }
+    });
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -106,9 +107,7 @@ const TranspoterDashboardScreen = (props) => {
         <View style={styles.firstView}>
           <TouchableOpacity
             style={styles.otherRowView}
-            onPress={() =>
-              openParcelHistoryScreen(0)
-            }>
+            onPress={() => openParcelHistoryScreen(0)}>
             <View style={styles.subRowView}>
               <Text style={{...styles.tilteText, color: Colors.tilteText}}>
                 Pending
@@ -122,9 +121,7 @@ const TranspoterDashboardScreen = (props) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.otherRowView}
-            onPress={() =>
-              openParcelHistoryScreen(1)
-            }>
+            onPress={() => openParcelHistoryScreen(1)}>
             <View style={styles.subRowView}>
               <Text style={{...styles.tilteText, color: Colors.tilteText}}>
                 Ongoing
@@ -140,9 +137,7 @@ const TranspoterDashboardScreen = (props) => {
         <View style={styles.firstView}>
           <TouchableOpacity
             style={styles.otherRowView}
-            onPress={() =>
-              openParcelHistoryScreen(2)
-            }>
+            onPress={() => openParcelHistoryScreen(2)}>
             <View style={styles.subRowView}>
               <Text style={{...styles.tilteText, color: Colors.tilteText}}>
                 Accepted
@@ -156,9 +151,7 @@ const TranspoterDashboardScreen = (props) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.otherRowView}
-            onPress={() =>
-              openParcelHistoryScreen(3)
-            }>
+            onPress={() => openParcelHistoryScreen(3)}>
             <View style={styles.subRowView}>
               <Text style={{...styles.tilteText, color: Colors.tilteText}}>
                 Rejected
@@ -229,7 +222,7 @@ const TranspoterDashboardScreen = (props) => {
   );
 };
 
-TranspoterDashboardScreen.navigationOptions = (navigationData) => {
+TranspoterDashboardScreen.navigationOptions = navigationData => {
   return {
     headerShown: true,
     // headerTitle: 'Dashboard',

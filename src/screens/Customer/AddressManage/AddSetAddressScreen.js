@@ -45,43 +45,45 @@ import AppPreference from '../../../helper/preference/AppPreference';
 import * as addAddressActions from '../../../store/actions/addAddress/addAddress';
 import * as dropAddAddressActions from '../../../store/actions/addAddress/dropAddAddress';
 import localAddressData from '../../../helper/models/addAddress/addressData';
-import Geocoder from 'react-native-geocoder';
+import Geocoder from 'react-native-geocoder-reborn';
 import GooglePlacesTextInput from '../../../components/design/GooglePlacesTextInput';
 import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
 
 // Load the main class.
-const GOOGLE_API_KEY = "AIzaSyDWcZSbyp_kYJSNxLRVVemkx_5V9JlQDHA"
+const GOOGLE_API_KEY = 'AIzaSyDWcZSbyp_kYJSNxLRVVemkx_5V9JlQDHA';
 
-const AddSetAddressScreen = (props) => {
+const AddSetAddressScreen = props => {
   const ref = useRef();
 
   const statusAddAddress = props.navigation.getParam('statusAddAddress');
   const refreshAddressData = props.navigation.getParam('refreshAddressData');
   console.log('statusAddAddress', statusAddAddress);
-  
+
   useEffect(() => {
     Geocoder.fallbackToGoogle(GOOGLE_API_KEY);
   });
 
   let isEdit = props.navigation.getParam('isEdit');
   if (isEdit == undefined) {
-    isEdit = false
+    isEdit = false;
   }
   // console.log('isEdit:', isEdit);
 
-  let isEditFromParcelScreen = props.navigation.getParam('isEditFromParcelScreen');
+  let isEditFromParcelScreen = props.navigation.getParam(
+    'isEditFromParcelScreen',
+  );
   if (isEditFromParcelScreen == undefined) {
-    isEditFromParcelScreen = false
+    isEditFromParcelScreen = false;
   }
-  
-  let id = ''
-  let flatnameValue = {value: '', error: ''}
-  let areaValue = {value: '', error: ''}
-  let cityValue = {value: '', error: ''}
-  let stateValue = {value: '', error: ''}
-  let countryValue = {value: '', error: ''}
-  let pincodeValue = {value: '', error: ''}
-  let coordinatesValue = {latitude: 0.0, longitude: 0.0}
+
+  let id = '';
+  let flatnameValue = {value: '', error: ''};
+  let areaValue = {value: '', error: ''};
+  let cityValue = {value: '', error: ''};
+  let stateValue = {value: '', error: ''};
+  let countryValue = {value: '', error: ''};
+  let pincodeValue = {value: '', error: ''};
+  let coordinatesValue = {latitude: 0.0, longitude: 0.0};
 
   if (isEdit) {
     id = props.navigation.getParam('id');
@@ -115,7 +117,7 @@ const AddSetAddressScreen = (props) => {
     if (isEdit && ref) {
       ref.current?.setAddressText(props.navigation.getParam('flat_name'));
     }
-  }, [props.navigation])
+  }, [props.navigation]);
   //   const pickupAddressData = useSelector(
   //     (state) => state.pickupAddressData.pickupAddressData,
   //   );
@@ -151,9 +153,9 @@ const AddSetAddressScreen = (props) => {
         }, */
       });
     }
-    
+
     //props.navigation.pop()
-  }
+  };
 
   const onPressRegister = () => {
     const firstName = props.navigation.getParam('firstName');
@@ -161,7 +163,11 @@ const AddSetAddressScreen = (props) => {
     const email = props.navigation.getParam('email');
     const phone = props.navigation.getParam('phone');
 
-    const flatNameError = flatNameValidator(ref && flatname.value == '' ? ref.current?.getAddressText() : flatname.value);
+    const flatNameError = flatNameValidator(
+      ref && flatname.value == ''
+        ? ref.current?.getAddressText()
+        : flatname.value,
+    );
     const areaError = areaValidator(area.value);
     const cityError = cityValidator(city.value);
     const stateError = stateValidator(state.value);
@@ -187,7 +193,10 @@ const AddSetAddressScreen = (props) => {
       setPincode({...pincode, error: pincodeError});
       return;
     } else {
-      let formattedAddress = `${(ref && flatname.value == '' ? ref.current?.getAddressText() : flatname.value) +
+      let formattedAddress = `${
+        (ref && flatname.value == ''
+          ? ref.current?.getAddressText()
+          : flatname.value) +
         ', ' +
         area.value +
         ', ' +
@@ -197,8 +206,9 @@ const AddSetAddressScreen = (props) => {
         ' - ' +
         pincode.value +
         '. ' +
-        country.value}`
-      
+        country.value
+      }`;
+
       /* console.log(`formattedAddress123:`, formattedAddress)
       console.log(`flatname.value:`, flatname.value) */
 
@@ -216,12 +226,12 @@ const AddSetAddressScreen = (props) => {
       if (statusAddAddress == 'pickup') {
         console.log('Check Pickup');
 
-        AsyncStorage.getItem(AppPreference.IS_LOGIN).then((valueLogin) => {  
+        AsyncStorage.getItem(AppPreference.IS_LOGIN).then(valueLogin => {
           const isLogin = JSON.parse(valueLogin);
           // console.log('Login Value is : ', isLogin);
-          
+
           if (isLogin === 1) {
-            AsyncStorage.getItem(AppPreference.LOGIN_UID).then((valueUID) => {
+            AsyncStorage.getItem(AppPreference.LOGIN_UID).then(valueUID => {
               dispatch(
                 addAddressActions.setPickupAddressData(
                   coordinates,
@@ -230,7 +240,9 @@ const AddSetAddressScreen = (props) => {
                   lastName,
                   email,
                   phone,
-                  ref && flatname.value == '' ? ref.current?.getAddressText() : flatname.value,
+                  ref && flatname.value == ''
+                    ? ref.current?.getAddressText()
+                    : flatname.value,
                   area.value,
                   city.value,
                   state.value,
@@ -239,10 +251,10 @@ const AddSetAddressScreen = (props) => {
                   statusAddAddress,
                   'yes',
                   valueUID,
-                  isEdit
+                  isEdit,
                 ),
               );
-              goBack()
+              goBack();
             });
           } else {
             dispatch(
@@ -253,7 +265,9 @@ const AddSetAddressScreen = (props) => {
                 lastName,
                 email,
                 phone,
-                ref && flatname.value == '' ? ref.current?.getAddressText() : flatname.value,
+                ref && flatname.value == ''
+                  ? ref.current?.getAddressText()
+                  : flatname.value,
                 area.value,
                 city.value,
                 state.value,
@@ -262,22 +276,22 @@ const AddSetAddressScreen = (props) => {
                 statusAddAddress,
                 'no',
                 '',
-                isEdit
+                isEdit,
               ),
             );
-            goBack()
+            goBack();
           }
         });
       } else {
         console.log('Check Drop');
-        AsyncStorage.getItem(AppPreference.IS_LOGIN).then((valueLogin) => {
+        AsyncStorage.getItem(AppPreference.IS_LOGIN).then(valueLogin => {
           const isLogin = JSON.parse(valueLogin);
           // console.log('Login Value is : ', isLogin);
 
           if (isLogin === 1) {
             // console.log(`ref.current?.getAddressText():`, ref.current?.getAddressText())
             // console.log('AddSetADdressScrenn.if:', ref && flatname.value == '' ? ref.current?.getAddressText() : flatname.value);
-            AsyncStorage.getItem(AppPreference.LOGIN_UID).then((valueUID) => {
+            AsyncStorage.getItem(AppPreference.LOGIN_UID).then(valueUID => {
               dispatch(
                 dropAddAddressActions.setDropAddressData(
                   coordinates,
@@ -286,7 +300,9 @@ const AddSetAddressScreen = (props) => {
                   lastName,
                   email,
                   phone,
-                  ref && flatname.value == '' ? ref.current?.getAddressText() : flatname.value,
+                  ref && flatname.value == ''
+                    ? ref.current?.getAddressText()
+                    : flatname.value,
                   area.value,
                   city.value,
                   state.value,
@@ -295,10 +311,10 @@ const AddSetAddressScreen = (props) => {
                   statusAddAddress,
                   'yes',
                   valueUID,
-                  isEdit
+                  isEdit,
                 ),
               );
-              goBack()
+              goBack();
             });
           } else {
             // console.log('AddSetADdressScrenn.else');
@@ -311,7 +327,9 @@ const AddSetAddressScreen = (props) => {
                 lastName,
                 email,
                 phone,
-                ref && flatname.value == '' ? ref.current?.getAddressText() : flatname.value,
+                ref && flatname.value == ''
+                  ? ref.current?.getAddressText()
+                  : flatname.value,
                 area.value,
                 city.value,
                 state.value,
@@ -320,10 +338,10 @@ const AddSetAddressScreen = (props) => {
                 statusAddAddress,
                 'no',
                 '',
-                isEdit
+                isEdit,
               ),
             );
-            goBack()
+            goBack();
           }
         });
       }
@@ -337,79 +355,85 @@ const AddSetAddressScreen = (props) => {
     // const finalResult = result.replace(endRegex, '');
     // console.log(`finalResult:`, finalResult);
     // return finalResult;
-    return result
+    return result;
   };
 
   const onPressAddressItem = (data, details) => {
-    console.log(`data: ${JSON.stringify(data)}`)
-    console.log(`details for set address: ${JSON.stringify(details)}`)
+    console.log(`data: ${JSON.stringify(data)}`);
+    console.log(`details for set address: ${JSON.stringify(details)}`);
     var componentList = details.adr_address.split(', ');
 
-    let flatDetails = ''  // ? extended-address
-    let area = ''         // ? street-address
-    let city = ''         // ? locality
-    let state = ''        // ? region
-    let country = ''      // ? country-name
-    let pincode = ''      // ? postal-code
+    let flatDetails = ''; // ? extended-address
+    let area = ''; // ? street-address
+    let city = ''; // ? locality
+    let state = ''; // ? region
+    let country = ''; // ? country-name
+    let pincode = ''; // ? postal-code
 
     for (const component of details.address_components) {
       const componentType = component.types[0];
-  
+
       switch (componentType) {
-        case "street_number": {
+        case 'street_number': {
           flatDetails = `${component.long_name}`;
           break;
         }
-  
+
         /* case "route": {
           flatDetails += component.short_name;
           break;
         } */
 
-        case "sublocality_level_2": {
-          flatDetails = flatDetails === '' ? '' : `${flatDetails}, ` + `${component.long_name}`;
+        case 'sublocality_level_2': {
+          flatDetails =
+            flatDetails === ''
+              ? ''
+              : `${flatDetails}, ` + `${component.long_name}`;
           break;
         }
-  
-        case "route": {
+
+        case 'route': {
           area += component.long_name;
           break;
         }
-  
-        case "postal_code_suffix": {
+
+        case 'postal_code_suffix': {
           pincode = `${pincode}-${component.long_name}`;
           break;
         }
 
-        case "locality": {
+        case 'locality': {
           city = component.long_name;
           break;
         }
 
-        case "administrative_area_level_1": {
+        case 'administrative_area_level_1': {
           state = component.short_name;
           break;
         }
 
-        case "country": {
+        case 'country': {
           country = component.long_name;
           break;
         }
 
-        case "postal_code": {
+        case 'postal_code': {
           pincode = `${component.long_name}${pincode}`;
           break;
         }
       }
     }
 
-    setFlatName({value: flatDetails, error: ''})
-    setArea({value: area, error: ''})
-    setCity({value: city, error: ''})
-    setState({value: state, error: ''})
-    setCountry({value: country, error: ''})
-    setPincode({value: pincode, error: ''})
-    setCoordinates({ latitude: details.geometry.location.lat.toFixed(6), longitude: details.geometry.location.lng.toFixed(6) })
+    setFlatName({value: flatDetails, error: ''});
+    setArea({value: area, error: ''});
+    setCity({value: city, error: ''});
+    setState({value: state, error: ''});
+    setCountry({value: country, error: ''});
+    setPincode({value: pincode, error: ''});
+    setCoordinates({
+      latitude: details.geometry.location.lat.toFixed(6),
+      longitude: details.geometry.location.lng.toFixed(6),
+    });
 
     // console.log(`coordinates: ${JSON.stringify(coordinates)}`)
     if (ref) {
@@ -480,14 +504,11 @@ const AddSetAddressScreen = (props) => {
         );
       }
     } */
-  }
+  };
 
   const addSetAddressView = () => {
     return (
-      <ScrollView 
-        style={styles.container}
-        keyboardShouldPersistTaps='always'
-      >
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="always">
         <Loader loading={isLoading} />
         <View style={styles.lineView}>
           <View style={styles.inActiveDotView}>
@@ -496,7 +517,7 @@ const AddSetAddressScreen = (props) => {
           <View style={styles.inActiveLineView} />
           <View style={styles.activeLineView} />
           <View style={styles.activeDotView}>
-          <Text style={styles.activeNumberText}>2</Text>
+            <Text style={styles.activeNumberText}>2</Text>
           </View>
         </View>
         <View style={styles.lineViewText}>
@@ -511,20 +532,19 @@ const AddSetAddressScreen = (props) => {
             addressValue={onPressAddressItem}
           /> */}
 
-          <ScrollView 
+          <ScrollView
             horizontal={true}
-            style={{ flex: 1 }}
-            contentContainerStyle={{ flex: 1 }}
-            keyboardShouldPersistTaps='always'
-          >
+            style={{flex: 1}}
+            contentContainerStyle={{flex: 1}}
+            keyboardShouldPersistTaps="always">
             <GooglePlacesAutocomplete
               ref={ref}
-              placeholder={"Flat name or Number"}
+              placeholder={'Flat name or Number'}
               minLength={3}
               returnKeyType={'next'}
               listViewDisplayed="auto"
               fetchDetails={true}
-              keyboardShouldPersistTaps='always'
+              keyboardShouldPersistTaps="always"
               // renderDescription={(row) => row.description}
               onPress={onPressAddressItem}
               /* textInputProps={{
@@ -534,12 +554,12 @@ const AddSetAddressScreen = (props) => {
                 }
               }} */
               onNotFound={() => {
-                console.log(`onNotFound`)
+                console.log(`onNotFound`);
               }}
               query={{
                 key: AppConstants.google_place_api_key,
                 language: 'en',
-                components: 'country:in'
+                components: 'country:in',
                 // types: '(cities)',
               }}
               enablePoweredByContainer={false}
@@ -550,7 +570,7 @@ const AddSetAddressScreen = (props) => {
               styles={{
                 textInputContainer: {
                   height: 60,
-                  borderRadius: 4
+                  borderRadius: 4,
                 },
                 textInput: {
                   height: 60,
@@ -559,7 +579,7 @@ const AddSetAddressScreen = (props) => {
                   // fontFamily: 'SofiaPro-Regular',
                   backgroundColor: Colors.surfaceColor,
                   borderRadius: 4,
-                  borderWidth: 1
+                  borderWidth: 1,
                 },
                 /* predefinedPlacesDescription: {
                   color: '#1faadb',
@@ -592,14 +612,14 @@ const AddSetAddressScreen = (props) => {
             label="Area"
             returnKeyType="next"
             value={area.value}
-            onChangeText={(text) => setArea({value: text, error: ''})}
+            onChangeText={text => setArea({value: text, error: ''})}
             error={!!area.error}
             errorText={area.error}
             autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._areainput = ref;
             }}
             onSubmitEditing={() => this._cityinput && this._cityinput.focus()}
@@ -609,14 +629,14 @@ const AddSetAddressScreen = (props) => {
             label="City or Town"
             returnKeyType="next"
             value={city.value}
-            onChangeText={(text) => setCity({value: text, error: ''})}
+            onChangeText={text => setCity({value: text, error: ''})}
             error={!!city.error}
             errorText={city.error}
             autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._cityinput = ref;
             }}
             onSubmitEditing={() => this._stateinput && this._stateinput.focus()}
@@ -626,14 +646,14 @@ const AddSetAddressScreen = (props) => {
             label="State"
             returnKeyType="next"
             value={state.value}
-            onChangeText={(text) => setState({value: text, error: ''})}
+            onChangeText={text => setState({value: text, error: ''})}
             error={!!state.error}
             errorText={state.error}
             autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._stateinput = ref;
             }}
             onSubmitEditing={() =>
@@ -645,14 +665,14 @@ const AddSetAddressScreen = (props) => {
             label="Country"
             returnKeyType="next"
             value={country.value}
-            onChangeText={(text) => setCountry({value: text, error: ''})}
+            onChangeText={text => setCountry({value: text, error: ''})}
             error={!!country.error}
             errorText={country.error}
             autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._countryinput = ref;
             }}
             onSubmitEditing={() =>
@@ -664,14 +684,14 @@ const AddSetAddressScreen = (props) => {
             label="Pincode"
             returnKeyType="next"
             value={pincode.value}
-            onChangeText={(text) => setPincode({value: text, error: ''})}
+            onChangeText={text => setPincode({value: text, error: ''})}
             error={!!pincode.error}
             errorText={pincode.error}
             autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            ref={(ref) => {
+            ref={ref => {
               this._pincodeinput = ref;
             }}
             onSubmitEditing={Keyboard.dismiss}
@@ -681,19 +701,22 @@ const AddSetAddressScreen = (props) => {
           <Text style={styles.loginText}>{isEdit ? 'EDIT' : 'ADD'}</Text>
         </TouchableOpacity>
       </ScrollView>
-    )
-  }
+    );
+  };
 
-  return Platform.OS == "android" ? <View style={{flex: 1}}>
-    {addSetAddressView()}
-  </View> :
-  <KeyboardAvoidingView style={styles.container} behavior="padding" keyboardVerticalOffset={64}>
-    {addSetAddressView()}
-  </KeyboardAvoidingView>
-  ;
+  return Platform.OS == 'android' ? (
+    <View style={{flex: 1}}>{addSetAddressView()}</View>
+  ) : (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior="padding"
+      keyboardVerticalOffset={64}>
+      {addSetAddressView()}
+    </KeyboardAvoidingView>
+  );
 };
 
-AddSetAddressScreen.navigationOptions = (navigationData) => {
+AddSetAddressScreen.navigationOptions = navigationData => {
   const isEdit = navigationData.navigation.getParam('isEdit');
   return {
     headerShown: true,
@@ -900,8 +923,6 @@ const styles = StyleSheet.create({
 });
 
 export default AddSetAddressScreen;
-
-
 
 // else {
 //   const loadedAddressData = new localAddressData(
