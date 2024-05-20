@@ -23,107 +23,42 @@ import * as addressDataActions from '../../../store/actions/addAddress/addressDa
 import * as addAddressActions from '../../../store/actions/addAddress/addAddress';
 import * as dropAddAddressActions from '../../../store/actions/addAddress/dropAddAddress';
 import AppPreference from '../../../helper/preference/AppPreference';
-import EmptyData from '../../../components/design/EmptyData';
-import Loader from '../../../components/design/Loader';
 
 // Load the main class.
 
 const AddressScreen = (props) => {
-  const sourceData = props.navigation.getParam('source');
-  const destinationData = props.navigation.getParam('destination');
   const statusAddAddress = props.navigation.getParam('statusAddAddress');
-  const isRefreshData = props.navigation.getParam('isRefreshData');
   console.log('statusAddAddress', statusAddAddress);
   const addressData = useSelector(
     (state) => state.allAddressData.allAddressData,
   );
-
-  const isLoadingData = useSelector(
-    (state) => state.allAddressData.isLoadingData
-  )
-
   const dispatch = useDispatch();
 
   useEffect(() => {
-    //console.log(`pickupAddressData:`, pickupAddressData)
-    //console.log(`dropAddressData:`, dropAddressData)
-    if (!addressData) {
-      return
-    }
-    for (let i = 0; i < addressData.length; i++) {
-      let data = addressData[i];
-      if (statusAddAddress === 'pickup') { 
-        if (data.id == dropAddressData.id) {
-          addressData.splice(i, 1)
-          break
-        }
-      } else {
-        if (data.id == pickupAddressData.id) {
-          addressData.splice(i, 1)
-          break
-        }
-      }
-    }
-    console.log(`useEffect.addressData:`, addressData)
-    setAddressList(addressData)
-  }, [addressData])
-
-  const [addressList, setAddressList] = useState(true);
-
-  const pickupAddressData = useSelector(
-    (state) => state.pickupAddressData.pickupAddressData,
-  );
-  const dropAddressData = useSelector(
-    (state) => state.dropAddressData.dropAddressData,
-  );
-
-  const fetchAddressList = () => {
-    AsyncStorage.getItem(AppPreference.IS_LOGIN).then((valueLogin) => {
-      const isLogin = JSON.parse(valueLogin);
-      console.log('Login Value is : ', isLogin);
-      if (isLogin == 1) {
-        AsyncStorage.getItem(AppPreference.LOGIN_UID).then((valueUID) => {
-          try {
-            dispatch(addressDataActions.fetchAddressList(valueUID));
-          } catch (err) {}
-        });          
-      } else {
-        // AsyncStorage.getItem(AppPreference.LOCAL_ADDRESS).then((valueLocalAddress) => {
-        //   const localAddress = JSON.parse(valueLocalAddress);
-        //   console.log('Local Address is : ', localAddress.length);    
-        // }); 
-        try {
-          dispatch(addressDataActions.fetchAddressList(''));
-        } catch (err) {}
-      }
+    // firebase
+    //   .firestore()
+    //   .collection('users')
+    //   .doc('uid')
+    //   .collection('address_details')
+    //   .get()
+    //   .then((collections) => {
+    //     collections.forEach((collection) => {
+    //       // alert(JSON.stringify(collection)); //collection.id is can be read here
+    //       console.log('Data is : ', collection);
+    //       setAddressData(collection.data());
+    //     });
+    //   });
+    AsyncStorage.getItem(AppPreference.LOGIN_UID).then((valueUID) => {
+      try {
+        dispatch(addressDataActions.fetchAddressList(valueUID));
+      } catch (err) {}
     });
-
-    // AsyncStorage.getItem(AppPreference.LOGIN_UID).then((valueUID) => {
-    //   try {
-    //     dispatch(addressDataActions.fetchAddressList(valueUID));
-    //   } catch (err) {}
-    // });
-  }
-
-  useEffect(() => {
-    fetchAddressList()
-    const willFocusSubscription = props.navigation.addListener('willFocus', () => {
-      /* console.log(`willFocusSubscription`)
-      const isRefreshData = props.navigation.getParam('isRefreshData');
-      console.log(`useEffect.isRefreshData: ${isRefreshData}`) */
-      fetchAddressList();
-    });
-
-    return willFocusSubscription;
   }, [dispatch]);
 
   const onPressAddress = (selectedData) => {
-    console.log(`onPressAddress`)
     if (statusAddAddress === 'pickup') {
       dispatch(
         addAddressActions.setPickupAddressData(
-          selectedData.coordinates,
-          selectedData.id,
           selectedData.first_name,
           selectedData.last_name,
           selectedData.email,
@@ -135,15 +70,13 @@ const AddressScreen = (props) => {
           selectedData.country,
           selectedData.pincode,
           statusAddAddress,
-          'nochange',
+          'no',
         ),
       );
       props.navigation.pop();
     } else {
       dispatch(
         dropAddAddressActions.setDropAddressData(
-          selectedData.coordinates,
-          selectedData.id,
           selectedData.first_name,
           selectedData.last_name,
           selectedData.email,
@@ -155,7 +88,7 @@ const AddressScreen = (props) => {
           selectedData.country,
           selectedData.pincode,
           statusAddAddress,
-          'nochange',
+          'no',
         ),
       );
       props.navigation.pop();
@@ -171,30 +104,6 @@ const AddressScreen = (props) => {
     );
   };
 
-  const openAddAddressScreen = (addressData) => {
-    console.log(`addressData:`, addressData)
-    // return
-    props.navigation.navigate({
-      routeName: 'AddAddressScreen',
-      params: {
-        statusAddAddress: statusAddAddress,
-        isEdit: true,
-        id: addressData.id,
-        name: addressData.first_name,
-        lastName: addressData.last_name,
-        email: addressData.email,
-        phone: addressData.phone_number,
-        flat_name: addressData.flat_name,
-        area: addressData.area,
-        city: addressData.city,
-        state: addressData.state,
-        country: addressData.country,
-        pincode: addressData.pincode,
-        coordinate: addressData.coordinates
-      },
-    });
-  }
-
   const renderAddressData = (itemData) => {
     return (
       <TouchableOpacity
@@ -206,9 +115,7 @@ const AddressScreen = (props) => {
           <Text style={{...styles.titleText, fontSize: RFPercentage(2.2)}}>
             {itemData.item.first_name + ' ' + itemData.item.last_name}
           </Text>
-          <TouchableOpacity onPress={() => {
-            openAddAddressScreen(itemData.item)
-          }}>
+          <TouchableOpacity>
             <Text style={styles.subTitleText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -232,20 +139,13 @@ const AddressScreen = (props) => {
   };
   return (
     <View style={styles.container}>
-      {/* <FlatList
+      <FlatList
         keyExtractor={(item, index) => item.id}
         data={addressData}
         renderItem={renderAddressData}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={addressData.length === 0 && ListEmpty}
-      /> */}
-      {addressList.length != 0 ? <FlatList
-        keyExtractor={(item, index) => item.id}
-        data={addressList}
-        renderItem={renderAddressData}
-        showsVerticalScrollIndicator={false}
-      /> : <EmptyData data={"Address"} />
-      }
+      />
       <TouchableOpacity
         style={styles.buttonBookNow}
         onPress={() => {
@@ -258,7 +158,6 @@ const AddressScreen = (props) => {
         }}>
         <Text style={styles.bookNowText}>ADD NEW ADDRESS</Text>
       </TouchableOpacity>
-      <Loader loading={isLoadingData} />
     </View>
   );
 };

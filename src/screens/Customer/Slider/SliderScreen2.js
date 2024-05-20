@@ -13,12 +13,11 @@ import {RFPercentage} from 'react-native-responsive-fontsize';
 // Import the JS file.
 import Colors from '../../../helper/extensions/Colors';
 
+// Load the main class.
 const {height, width} = Dimensions.get('window');
 const imageWidth = 843
 const imageHeight = 864
 const imageRatio = imageWidth / imageHeight
-
-// Load the main class.
 
 const SliderScreen2 = (props) => {
   return (
@@ -34,10 +33,10 @@ const SliderScreen2 = (props) => {
           <View style={styles.inActiveDotView} />
         </View>
         <Text style={styles.titleTextLabel}>
-          Reliable & Clear
+          Even to space with us! Together
         </Text>
         <Text style={styles.subTitleTextLabel}>
-          Trust in secure transactions, transparent pricing, and dependable partners. Your goods, our priority.
+          Our app can send you everywhere, even space. For only $2.99 per month
         </Text>
       </ScrollView>
       <TouchableOpacity
@@ -65,16 +64,17 @@ const styles = StyleSheet.create({
   },
   sliderImage: {
     margin: 16,
-    marginTop: 48,
-    marginLeft: 'auto',
-    marginRight: 'auto',
+    marginTop: 64,
+    marginLeft: 24,
+    marginRight: 24,
     height: 'auto',
-    width: width - 24 - 24 - 58,
+    width: width - 24 - 24,
     aspectRatio: imageRatio,
     resizeMode: 'contain',
   },
   dotView: {
     margin: 16,
+    marginTop: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

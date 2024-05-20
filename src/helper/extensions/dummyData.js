@@ -37,7 +37,7 @@ export const VehicleData = [
   {
     id: 0,
     name: 'Bike',
-    itemImageUrl: require('../../assets/assets/dashboard/bike.png'),
+    itemImageUrl: require('../../assets/assets/dashboard/Bike.png'),
   },
   {
     id: 1,
@@ -57,7 +57,7 @@ export const VehicleData = [
   {
     id: 4,
     name: 'Bike',
-    itemImageUrl: require('../../assets/assets/dashboard/bike.png'),
+    itemImageUrl: require('../../assets/assets/dashboard/Bike.png'),
   },
   {
     id: 5,
@@ -95,6 +95,25 @@ export const historyStatus = [
   {
     id: 0,
     title: 'Pending',
+  },
+  {
+    id: 1,
+    title: 'Ongoing',
+  },
+  {
+    id: 2,
+    title: 'Completed',
+  },
+  {
+    id: 3,
+    title: 'Rejected',
+  },
+];
+
+export const driverHistoryStatus = [
+  {
+    id: 0,
+    title: 'Assigned',
   },
   {
     id: 1,

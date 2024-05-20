@@ -20,6 +20,7 @@ import AppPreference from '../../../helper/preference/AppPreference';
 import firestore from '@react-native-firebase/firestore';
 import Loader from '../../../components/design/Loader';
 import moment from 'moment';
+import { useSelector } from 'react-redux';
 
 // Load the main class.
 
@@ -31,6 +32,42 @@ const NotificationScreen = (props) => {
     isUpdate = false
   }
   console.log(`isUpdate:`, isUpdate)
+
+  const profileData = useSelector(
+    (state) => state.fetchProfileData.fetchProfileData,
+  );
+  
+  const pendingData = useSelector(
+    (state) => state.customerPendingOrderData.customerPendingOrderData,
+  );
+
+  const ongoingData = useSelector(
+    (state) => state.customerOngoingOrderData.customerOngoingOrderData,
+  );
+
+  const completedData = useSelector(
+    (state) => state.customerCompletedOrderData.customerCompletedOrderData,
+  );
+
+  const rejectedData = useSelector(
+    (state) => state.customerRejectedOrderData.customerRejectedOrderData,
+  );
+
+  const driverAssignedData = useSelector(
+    (state) => state.customerAssignedOrderData.customerAssignedOrderData,
+  );
+
+  const driverOngoingData = useSelector(
+    (state) => state.customerOngoingOrderData.customerOngoingOrderData,
+  );
+
+  const driverCompletedData = useSelector(
+    (state) => state.customerCompletedOrderData.customerCompletedOrderData,
+  );
+
+  const driverRejectedData = useSelector(
+    (state) => state.customerRejectedOrderData.customerRejectedOrderData,
+  );
 
   useEffect(() => {
     getNotificationList()
@@ -82,6 +119,7 @@ const NotificationScreen = (props) => {
       .then(() => {
         // setIsLoading(false)
         getNotificationList()
+        setIsLoading(false)
         openViewOnClickOfNotification(notificationData)
       })
       .catch(err => {
@@ -91,40 +129,71 @@ const NotificationScreen = (props) => {
   }
 
   const openViewOnClickOfNotification = (notificationData) => {
-    console.log(`notificationData.data.type:`,notificationData.data)
-    if(notificationData.data.orderId!=undefined && notificationData.data.orderId!='' && notificationData.data.orderId!=null){
-    if (notificationData.data.type == "accept") {
-      openOrderDetailsScreen(notificationData.data.orderId)
-    } else if (notificationData.data.type == "unloaded") {
-      openOrderDetailsScreen(notificationData.data.orderId)
-    } else if (notificationData.data.type == "assign") {
-      openOrderDetailsScreen(notificationData.data.orderId)
-    } else if (notificationData.data.type == "transporter_reject") {
-      openOrderDetailsScreen(notificationData.data.orderId)
-    } else if (notificationData.data.type == "no_transporter_reject") {
-      openOrderDetailsScreen(notificationData.data.orderId)
+    console.log(`notificationData.data.type`,notificationData.data)
+    if (notificationData.data.type == "confirm") {
+      openOrderHistoryScreen()
+    } else if (notificationData.data.type == "driver_reject") {
+      openOrderHistoryScreen()
+    } else if (notificationData.data.type == "request") {
+      openOrderHistoryScreen()
+    } else if (notificationData.data.type == "verified") {
+      openDriverListScreen()
+    } else if (notificationData.data.type == "rejected") {
+      openDriverListScreen()
+    } else if (notificationData.data.type == "assign_driver") {
+      const {data} = notificationData;
+      const {orderId} = data 
+      openDriverOrderHistoryScreen(orderId)
     }
-    else if(notificationData.data.type == "started"){
-      openOrderDetailsScreen(notificationData.data.orderId)
-    }
-    else if(notificationData.data.type == "on-way"){
-      openOrderDetailsScreen(notificationData.data.orderId)
-    }
-    else if(notificationData.data.type == "unloading"){
-      openOrderDetailsScreen(notificationData.data.orderId)
-    }
-    else if(notificationData.data.type == "dispute"){
-      openOrderDetailsScreen(notificationData.data.orderId)
-    }
-  }
   }
 
-  const openOrderDetailsScreen = (orderId) => {
+  const openOrderHistoryScreen = () => {
+    if (profileData.user_type == "driver") {
+      return
+    }
     props.navigation.navigate({
-      routeName: 'OrderDetailsScreen',
+      routeName: 'ParcelHistoryScreen',
       params: {
-        orderID: orderId
-      }
+        historyStatus: 0,
+        pendingData: pendingData,
+        ongoingData: ongoingData,
+        completedData: completedData,
+        rejectedData: rejectedData
+      },
+    })
+  }
+
+  const openDriverListScreen = () => {
+    if (profileData.user_type == "driver") {
+      return
+    }
+    props.navigation.navigate({
+      routeName: 'DriverlistScreen',
+      params: {
+        isShowBack: true
+      },
+    })
+  }
+
+  const openDriverOrderHistoryScreen = (orderId) => {
+    if (profileData.user_type != "driver") {
+      props.navigation.navigate({
+        routeName: 'ParcelDetailsScreen',
+        params: {
+          orderID: orderId
+        }
+      })
+      return
+    }
+    props.navigation.navigate({
+      routeName: 'DriverHistoryScreen',
+      params: {
+        historyStatus: 0,
+        assignedData: driverAssignedData,
+        ongoingData: driverOngoingData,
+        completedData: driverCompletedData,
+        rejectedData: driverRejectedData
+      },
     })
   }
 
@@ -256,7 +325,7 @@ NotificationScreen.navigationOptions = (navigationData) => {
       <View style={styles.viewHeaderLeft}>
         <TouchableOpacity
           onPress={() => {
-            navigationData.navigation.pop();
+            navigationData.navigation.goBack();
           }}>
           <Image
             style={styles.menuImage}

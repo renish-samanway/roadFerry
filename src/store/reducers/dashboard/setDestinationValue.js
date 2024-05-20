@@ -4,7 +4,6 @@ const initialState = {
   setDestinationTextValue: '',
   setDestinationLatitude: '',
   setDestinationLongitude: '',
-  destinationAllData: {},
 };
 
 export default (state = initialState, action) => {
@@ -14,7 +13,6 @@ export default (state = initialState, action) => {
         setDestinationTextValue: action.setDestinationTextValue,
         setDestinationLatitude: action.setDestinationLatitude,
         setDestinationLongitude: action.setDestinationLongitude,
-        destinationAllData: action.destinationAllData,
       };
   }
   return state;

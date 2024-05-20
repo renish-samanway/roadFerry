@@ -1,7 +1,7 @@
 import firestore from '@react-native-firebase/firestore';
 
-export const GET_VEHICLE_LIST = 'GET_DRIVER_LIST';
-export const IS_LOADING = 'IS_LOADING';
+export const GET_VEHICLE_LIST = 'GET_VEHICLE_LIST';
+export const IS_VEHICLE_LOADING = 'IS_VEHICLE_LOADING';
 
 export const fetchVehicleList = (userID, isStartProgress) => {
   return async (dispatch) => {
@@ -10,7 +10,7 @@ export const fetchVehicleList = (userID, isStartProgress) => {
       const vehicleList = [];
       if (isStartProgress) {
         dispatch({
-          type: IS_LOADING,
+          type: IS_VEHICLE_LOADING,
           isLoading: true,
         });
       }
@@ -18,6 +18,7 @@ export const fetchVehicleList = (userID, isStartProgress) => {
         .collection('users')
         .doc(userID)
         .collection('vehicle_details')
+        .where('is_deleted', '==', false)
         .get()
         .then((querySnapshot) => {
           console.log('Total vehicle_details data: ', querySnapshot.size);
@@ -34,7 +35,7 @@ export const fetchVehicleList = (userID, isStartProgress) => {
     } catch (err) {
       // send to custom analytics server
       dispatch({
-        type: IS_LOADING,
+        type: IS_VEHICLE_LOADING,
         isLoading: false,
       });
       throw err;

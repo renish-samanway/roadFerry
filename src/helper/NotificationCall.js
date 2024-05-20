@@ -12,7 +12,7 @@ export default NotificationCall = (parameters) => {
       })
         .then(response => response.json())
         .then(responseJson => {
-          console.log(`SEND_NOTIFICATION: ${JSON.stringify(responseJson)}`);
+          console.log(`SEND_NOTIFICATION`,responseJson,parameters,AppConstants.SEND_NOTIFICATION);
         })
         .catch(error => {
           console.log(`SEND_NOTIFICATION.error: ${error}`);

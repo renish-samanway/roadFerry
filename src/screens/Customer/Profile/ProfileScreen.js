@@ -22,6 +22,7 @@ import ProfileButton from '../../../components/Customer/Profile/ProfileButton';
 import ProfileData from '../../../components/Customer/Profile/ProfileData';
 import * as fetchProfileDataActions from '../../../store/actions/customer/profile/fetchProfileData';
 import AppPreference from '../../../helper/preference/AppPreference';
+import Loader from '../../../components/design/Loader';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 // Load the main class.
@@ -30,7 +31,6 @@ const ProfileScreen = (props) => {
   const profileData = useSelector(
     (state) => state.fetchProfileData.fetchProfileData,
   );
-  console.log(`profileData: ${JSON.stringify(profileData)}`)
 
   let userUID = useSelector(
     (state) => state.fetchProfileData.userUID,
@@ -38,31 +38,21 @@ const ProfileScreen = (props) => {
   // userUID = "B4Ti8IgLgpsKZECGqOJ0"
   console.log(`ProfileScreen.userUID: ${userUID}`)
 
-  const checkAndNavigateToLogin = () => {
-    AsyncStorage.getItem(AppPreference.IS_LOGIN).then((valueLogin) => {
-      const isLogin = JSON.parse(valueLogin);
-      console.log('Login Value is : ', isLogin);
-      if (isLogin != 1) {
-        props.navigation.navigate('LoginScreen')
-      }
-    });
-  }
-
   const dispatch = useDispatch();
   const fetchProfileData = useCallback(async () => {
-    checkAndNavigateToLogin()
     try {
       dispatch(fetchProfileDataActions.fetchProfileData(userUID));
     } catch (err) {
       console.log('Error is : ', err);
     }
-  }, [dispatch, userUID]);
+  }, [dispatch]);
 
   useEffect(() => {
-    const willFocusSub = props.navigation.addListener(
-      'willFocus',
-      fetchProfileData,
-    );
+    const willFocusSub = props.navigation.addListener('willFocus', () => {
+      console.log(`ProfileScreen.willFocus`)
+      fetchProfileData().then(() => {
+      });
+    });
 
     return () => {
       willFocusSub.remove();
@@ -73,6 +63,7 @@ const ProfileScreen = (props) => {
     // setIsLoading(true);
     fetchProfileData().then(() => {
       // setIsLoading(false);
+      // console.log(`profileData:`, profileData)
     });
   }, [dispatch, fetchProfileData]);
 
@@ -81,8 +72,18 @@ const ProfileScreen = (props) => {
     let tProfileData = {...profileData}
     if (tProfileData != undefined) {
       // console.log(`tProfileData.driver_photo.base64:`, tProfileData.driver_photo.base64)
-      if (tProfileData.customer_photo) {
-        image = typeof(tProfileData.customer_photo) === 'string' ? tProfileData.customer_photo : `data:${tProfileData.customer_photo.type};base64,${tProfileData.customer_photo.base64}`
+      if (tProfileData.user_type == 'driver' && tProfileData.driver_photo) {
+        if(typeof(tProfileData.driver_photo) === 'string') {
+          image = tProfileData.driver_photo
+        } else {
+          image = `data:${tProfileData.driver_photo.type};base64,${tProfileData.driver_photo.base64}`
+        }
+      } else if (tProfileData.transporter_photo) {
+        if(typeof(tProfileData.transporter_photo) === 'string') {
+          image = tProfileData.transporter_photo
+        } else {
+          image = `data:${tProfileData.transporter_photo.type};base64,${tProfileData.transporter_photo.base64}`
+        }
       }
     }
     // console.log(`image: ${image}`)
@@ -94,7 +95,7 @@ const ProfileScreen = (props) => {
     ) : (
       <Image
         style={styles.imageLogo}
-        source={{uri: image}}
+        source={{ uri: image }}
       />
     )
   }
@@ -113,15 +114,16 @@ const ProfileScreen = (props) => {
         <ProfileData keyName="Last Name" valueName={profileData ? profileData.last_name : ''} />
         <ProfileData keyName="Email" valueName={profileData ? profileData.email : ''} />
         <ProfileData keyName="Phone" valueName={profileData ? profileData.phone_number : ''} />
+        {/* <TouchableOpacity
+          style={styles.cardView}
+          onPress={() => {
+            props.navigation.navigate('ChangePasswordscreen')
+          }}>
+          <Text style={styles.keyText}>Change Password</Text>
+          <Icon name="keyboard-arrow-right" size={24} />
+        </TouchableOpacity> */}
       </View>
-      {/* <TouchableOpacity
-        style={styles.cardView}
-        onPress={() => {
-          props.navigation.navigate('ChangePasswordscreen')
-        }}>
-        <Text style={styles.keyText}>Change Password</Text>
-        <Icon name="keyboard-arrow-right" size={24} />
-      </TouchableOpacity> */}
+      {/* <Loader loading={isLoading} /> */}
     </ScrollView>
   );
 };

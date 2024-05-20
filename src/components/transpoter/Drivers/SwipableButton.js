@@ -13,7 +13,7 @@ const SwipableButton = (props) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={styles.editViewContainer}
+        style={[styles.editViewContainer, {borderTopLeftRadius: 8, borderBottomLeftRadius: 8, borderTopRightRadius: props.isSelf ? 8 : 0, borderBottomRightRadius: props.isSelf ? 8 : 0}]}
         onPress={props.editButton}>
         <Image
           style={styles.deleteImage}
@@ -21,7 +21,7 @@ const SwipableButton = (props) => {
         />
         <Text style={styles.titleText}>Edit</Text>
       </TouchableOpacity>
-      <TouchableOpacity
+      {!props.isSelf ? <TouchableOpacity
         style={styles.deleteViewContainer}
         onPress={props.deleteButton}>
         <Image
@@ -29,7 +29,7 @@ const SwipableButton = (props) => {
           source={require('../../../assets/assets/Transpoter/Drivers/ic_delete.png')}
         />
         <Text style={styles.titleText}>Delete</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> : null}
     </View>
   );
 };
@@ -40,6 +40,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 12
   },
   editViewContainer: {
     marginLeft: 8,
@@ -48,6 +49,8 @@ const styles = StyleSheet.create({
     width: 60,
     alignItems: 'center',
     justifyContent: 'center',
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8
   },
   deleteViewContainer: {
     height: '100%',
@@ -55,6 +58,8 @@ const styles = StyleSheet.create({
     width: 60,
     alignItems: 'center',
     justifyContent: 'center',
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8
   },
   deleteImage: {
     height: 30,

@@ -9,16 +9,18 @@ import {
   Dimensions,
   Alert,
   ScrollView,
-  Keyboard,
   KeyboardAvoidingView
 } from 'react-native';
 import {useSelector, useDispatch, connect} from 'react-redux';
 
 // Import the Plugins and Thirdparty library.
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import Modal from 'react-native-modal';
+import firestore from '@react-native-firebase/firestore';
 
 // Import the JS file.
+
 import Colors from '../../../helper/extensions/Colors';
 import TextInput from '../../../components/design/TextInput';
 import {
@@ -28,8 +30,6 @@ import {
   passwordValidator,
   lastNameValidator,
 } from '../../../helper/extensions/Validator';
-import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import firestore from '@react-native-firebase/firestore';
 import Loader from '../../../components/design/Loader';
 import storage from '@react-native-firebase/storage'
 import AppConstants from '../../../helper/constants/AppConstants';
@@ -38,15 +38,15 @@ import AppConstants from '../../../helper/constants/AppConstants';
 const windowWidth = Dimensions.get('window').width;
 
 const EditProfileScreen = (props) => {
+  const profileData = useSelector(
+    (state) => state.fetchProfileData.fetchProfileData,
+  );
   let userUID = useSelector(
     (state) => state.fetchProfileData.userUID,
   );
   // userUID = "B4Ti8IgLgpsKZECGqOJ0"
   console.log(`EditProfileScreen.userUID: ${userUID}`)
 
-  const profileData = useSelector(
-    (state) => state.fetchProfileData.fetchProfileData,
-  );
   const [name, setName] = useState({
     value: profileData.first_name,
     error: '',
@@ -66,8 +66,7 @@ const EditProfileScreen = (props) => {
   // Image Picker view method
   const [selectedImage, setSelectedImage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  const selectFile = (selectedImageValue) => {
+  /* const selectFile = (selectedImageValue) => {
     var options = {
       title: 'Select Image',
       //   customButtons: [
@@ -101,32 +100,68 @@ const EditProfileScreen = (props) => {
         // imageBase64 = res.uri;
       }
     });
-  };
+  }; */
 
   const onPressHomeButton = () => {
     setPopup(false);
     props.navigation.pop();
   };
 
-  const updateUserData = (userData) => {
+  const updateUserData = (updatedData) => {
     firestore()
       .collection('users')
       .doc(userUID)
-      .update(userData)
+      .update(updatedData)
       .then(() => {
-        setIsLoading(false)
-        setPopup(true);
+        if (profileData.user_type == 'driver') {
+          firestore()
+          .collection('users')
+          .doc(profileData.transporter_uid)
+          .collection('driver_details')
+          .where('user_uid', '==', userUID)
+          .where('is_deleted', '==', false)
+          .get()
+          .then((querySnapshot) => {
+            console.log('Total driver_details (user_uid) data: ', querySnapshot.size);
+            if (querySnapshot.size == 0) {
+              setIsLoading(false)
+            }
+            querySnapshot.forEach((documentSnapshot) => {
+              console.log('documentSnapshot.id: ', documentSnapshot.id);
+              // driverList.push({id: documentSnapshot.id, data: documentSnapshot.data()});
+              firestore()
+              .collection('users')
+              .doc(profileData.transporter_uid)
+              .collection('driver_details')
+              .doc(documentSnapshot.id)
+              .update(updatedData)
+              .then(() => {
+                setIsLoading(false)
+                setPopup(true);
+              })
+              .catch(err => {
+                console.log(`EditProfileScreen.Error:`, err)
+                setIsLoading(false)
+              });
+            });
+          }).catch(error => {
+              console.log(`EditProfileScreen.error:`,error)
+              setIsLoading(false)
+          });
+        } else {
+          setIsLoading(false)
+          setPopup(true);
+        }
       })
-      .catch(error => {
-        console.log(`EditProfileScreen.Error:`, error)
+      .catch(err => {
+        console.log(`EditProfileScreen.Error:`, err)
         setIsLoading(false)
       })
   }
 
-  const onPressSave = () => {
+  const onPressSave = async () => {
     /* props.navigation.navigate('ChangePasswordscreen')
     return */
-
     const nameError = nameValidator(name.value);
     const lastNameError = lastNameValidator(lastName.value);
     const emailError = emailValidator(email.value);
@@ -138,20 +173,23 @@ const EditProfileScreen = (props) => {
     } else if (lastNameError) {
       setLastName({...lastName, error: lastNameError});
       return;
-    } else if (emailError) {
+    }/*  else if (emailError) {
       setEmail({...email, error: emailError});
       return;
-    } else if (phoneError) {
+    } */ else if (phoneError) {
       setPhone({...phone, error: phoneError});
       return;
     } else {
-      setIsLoading(true)
-      let userData = {
+      // setPopup(true);
+      // console.log(`selectedImage:`, selectedImage)
+      let updatedData = {
         first_name: name.value,
         last_name: lastName.value,
         email: email.value,
         phone_number: phone.value
       }
+      setIsLoading(true)
+      console.log(`selectedImage:`, selectedImage)
       if (selectedImage != '') {
         storage().ref(selectedImage.fileName)
         .putFile(selectedImage.uri)
@@ -160,15 +198,34 @@ const EditProfileScreen = (props) => {
           console.log(`${selectedImage.fileName} has been successfully uploaded.`);
           const url = await storage().ref(selectedImage.fileName).getDownloadURL()
           console.log(`url:`, url)
-          userData = {...userData, customer_photo: url}
-          updateUserData(userData)
+          if (profileData.user_type == 'driver') {
+            /* updatedData = {...updatedData, driver_photo: {
+              // base64: firestore.Blob.fromBase64String(selectedImage.data.base64),
+              base64: selectedImage.base64,
+              type: selectedImage.type
+            }} */
+            updatedData = {...updatedData, driver_photo: url}
+          } else {
+            /* updatedData = {...updatedData, transporter_photo: {
+              // base64: firestore.Blob.fromBase64String(selectedImage.data.base64),
+              base64: selectedImage.base64,
+              type: selectedImage.type
+            }} */
+            updatedData = {...updatedData, transporter_photo: url}
+          }
+          updateUserData(updatedData)
         })
+        .catch((e) => console.log('uploading image error => ', e));
       } else {
-        updateUserData(userData)
+        updateUserData(updatedData)
       }
       // console.log(`driverData:`, driverData)
       // console.log(`profileData:`, profileData)
-    }  
+      // console.log(`profileData:`, profileData)
+      // console.log(`profileData.transporter_uid:`, profileData.transporter_uid)
+      // console.log(`driver_details.userUID:`, userUID)
+      // return      
+    }
   };
 
   const loadProfileImage = () => {
@@ -179,8 +236,20 @@ const EditProfileScreen = (props) => {
       // console.log(`profileData.driver_photo.base64:`, profileData.driver_photo.base64)
       if (selectedImage != '') {
         image = `data:${selectedImage.type};base64,${selectedImage.base64}`
-      } else if (profileData.customer_photo) {
-        image = typeof(profileData.customer_photo) === 'string' ? profileData.customer_photo : `data:${profileData.customer_photo.type};base64,${profileData.customer_photo.base64}`
+      } else {
+        if (profileData.user_type == 'driver' && profileData.driver_photo) {
+          if(typeof(profileData.driver_photo) === 'string') {
+            image = profileData.driver_photo
+          } else {
+            image = `data:${profileData.driver_photo.type};base64,${profileData.driver_photo.base64}`
+          }
+        } else if (profileData.transporter_photo) {
+          if(typeof(profileData.transporter_photo) === 'string') {
+            image = profileData.transporter_photo
+          } else {
+            image = `data:${profileData.transporter_photo.type};base64,${profileData.transporter_photo.base64}`
+          }
+        }
       }
     }
     // console.log(`image: ${image}`)
@@ -196,6 +265,7 @@ const EditProfileScreen = (props) => {
       />
     )
   }
+
   const setEditProfileView = () => {
     return (
       <ScrollView style={styles.container}
@@ -204,10 +274,6 @@ const EditProfileScreen = (props) => {
         showsVerticalScrollIndicator={false}>
         <View
           style={{marginTop: 32, alignItems: 'center', justifyContent: 'center'}}>
-          {/* <Image
-            style={styles.imageLogo}
-            source={require('../../../assets/assets/default_user.png')}
-          /> */}
           {loadProfileImage()}
           <TouchableOpacity style={styles.viewUplaodImage} onPress={()=> { setUploadPopup(true) }}>
             <Image
@@ -283,7 +349,7 @@ const EditProfileScreen = (props) => {
               this._phoneinput = ref;
             }}
             onSubmitEditing={() =>
-              Keyboard.dismiss()
+              this._passwordinput && this._passwordinput.focus()
             }
           />
         </View>
@@ -292,26 +358,6 @@ const EditProfileScreen = (props) => {
           onPress={() => onPressSave()}>
           <Text style={styles.bookNowText}>SAVE</Text>
         </TouchableOpacity>
-        <Modal isVisible={popup}>
-          <View style={{flex: 1}}>
-            <View style={styles.centeredView}>
-              <View style={styles.popupMessageView}>
-                <Image
-                  style={styles.clickImage}
-                  source={require('../../../assets/assets/PlaceOrder/checkout_click.png')}
-                />
-                <Text style={{...styles.totalAmountText, textAlign: 'center'}}>
-                  Your Profile updated.
-                </Text>
-                <TouchableOpacity
-                  style={styles.homeButtonView}
-                  onPress={() => onPressHomeButton()}>
-                  <Text style={styles.placeOrderText}>OK</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
         <Modal isVisible={uploadPopup}>
           <View style={{flex: 1}}>
             <View style={styles.centeredView}>
@@ -379,11 +425,31 @@ const EditProfileScreen = (props) => {
             </View>
           </View>
         </Modal>
+        <Modal isVisible={popup}>
+          <View style={{flex: 1}}>
+            <View style={styles.centeredView}>
+              <View style={styles.popupMessageView}>
+                <Image
+                  style={styles.clickImage}
+                  source={require('../../../assets/assets/PlaceOrder/checkout_click.png')}
+                />
+                <Text style={{...styles.totalAmountText, textAlign: 'center'}}>
+                  Your Profile updated.
+                </Text>
+                <TouchableOpacity
+                  style={styles.homeButtonView}
+                  onPress={() => onPressHomeButton()}>
+                  <Text style={styles.placeOrderText}>OK</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
         <Loader loading={isLoading} />
       </ScrollView>
     );
   }
-
+  
   return AppConstants.isAndroid ? (
     <View style={{ flex: 1 }}>{setEditProfileView()}</View>
   ) : (
@@ -475,6 +541,14 @@ const styles = StyleSheet.create({
     height: 20,
     width: 20,
   },
+  popupView: {
+    backgroundColor: Colors.backgroundColor,
+    // height: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: windowWidth - 64,
+    borderRadius: 10,
+  },
   buttonBookNow: {
     margin: 64,
     marginLeft: 64,
@@ -486,14 +560,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 30,
-  },
-  popupView: {
-    backgroundColor: Colors.backgroundColor,
-    // height: 200,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: windowWidth - 64,
-    borderRadius: 10,
   },
   bookNowText: {
     fontFamily: 'SofiaPro-Medium',
@@ -509,6 +575,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     height: 50,
     width: 50,
+  },
+  totalAmountText: {
+    margin: 16,
+    fontFamily: 'SofiaPro-SemiBold',
+    fontSize: RFPercentage(2),
   },
   homeButtonView: {
     margin: 16,

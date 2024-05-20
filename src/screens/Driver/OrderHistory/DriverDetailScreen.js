@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,10 @@ import {
   TextInput,
   Keyboard,
   Alert,
+  SafeAreaView
 } from 'react-native';
-import {RFPercentage} from 'react-native-responsive-fontsize';
-import {useSelector, useDispatch} from 'react-redux';
+import { RFPercentage } from 'react-native-responsive-fontsize';
+import { useSelector, useDispatch } from 'react-redux';
 
 // Import the Plugins and Thirdparty library.
 import ScrollBottomSheet from 'react-native-scroll-bottom-sheet';
@@ -22,8 +23,11 @@ import Modal from 'react-native-modal';
 // Import the JS file.
 
 import Colors from '../../../helper/extensions/Colors';
-import {OrderDetailsOptions} from '../../../helper/extensions/dummyData';
+import { OrderDetailsOptions } from '../../../helper/extensions/dummyData';
 import ParcelOptionsData from '../../../components/Customer/AddParcelDetails/ParcelOptionsData';
+import MenuView from '../../../components/design/MenuView';
+import Loader from '../../../components/design/Loader';
+import { SET_IS_DRIVER_DETAILS_LOADING } from '../../../store/actions/customer/orderHistory/getOrderHistoryData';
 
 // Load the main class.
 const windowWidth = Dimensions.get('window').width;
@@ -31,21 +35,32 @@ const windowHeight = Dimensions.get('window').height;
 
 const DriverDetailScreen = (props) => {
   const selectedHistoryStatus = props.navigation.getParam('historyStatus');
+  const refreshData = props.navigation.getParam('refreshData');
+  const orderData = props.navigation.getParam('selectedOrderData');
+
+  let userUID = useSelector(
+    (state) => state.fetchProfileData.userUID,
+  );
+  // userUID = "B4Ti8IgLgpsKZECGqOJ0"
+  console.log(`DriverDetailScreen order data.userUID:`, orderData)
+
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [flagAccept, setFlagAccept] = useState(false);
   const [flagDriver, setFlagDriver] = useState(true);
   const [flagVehicle, setFlagVehicle] = useState(false);
-  const [search, setSearch] = useState({value: '', error: ''});
+  const [search, setSearch] = useState({ value: '', error: '' });
   const [selectedDriverIndex, setSelectedDriverIndex] = useState('');
   const [selectedVehicleIndex, setSelectedVehicleIndex] = useState('');
   const [popup, setPopup] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useDispatch()
 
-  const pickupAddressData = useSelector(
+  /* const pickupAddressData = useSelector(
     (state) => state.pickupAddressData.pickupAddressData,
   );
   const dropAddressData = useSelector(
     (state) => state.dropAddressData.dropAddressData,
-  );
+  ); */
   const renderDetailsOption = (itemData) => {
     return (
       <TouchableOpacity
@@ -97,7 +112,7 @@ const DriverDetailScreen = (props) => {
         )}
         data={OrderDetailsOptions}
         keyExtractor={(i) => i}
-        renderItem={({item}) => (
+        renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => {
               props.navigation.navigate({
@@ -148,8 +163,8 @@ const DriverDetailScreen = (props) => {
       Alert.alert(
         'Alert',
         'Please select the driver',
-        [{text: 'OK', onPress: () => console.log('OK Pressed')}],
-        {cancelable: false},
+        [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
+        { cancelable: false },
       );
     }
   };
@@ -163,15 +178,29 @@ const DriverDetailScreen = (props) => {
       Alert.alert(
         'Alert',
         'Please select the Driver or Vehicle',
-        [{text: 'OK', onPress: () => console.log('OK Pressed')}],
-        {cancelable: false},
+        [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
+        { cancelable: false },
       );
     }
   };
 
+  const getFormattedAddress = (location) => {
+    return `${location.flat_name +
+      ', ' +
+      location.area +
+      ', ' +
+      location.city +
+      ', ' +
+      location.state +
+      ' - ' +
+      location.pincode +
+      '. ' +
+      location.country}`
+  }
+
   return (
-    <View style={styles.container}>
-      <View>
+    <SafeAreaView style={styles.container}>
+      <View style={{ flex: 1 }}>
         <View>
           <FlatList
             horizontal
@@ -181,126 +210,187 @@ const DriverDetailScreen = (props) => {
             showsHorizontalScrollIndicator={false}
           />
         </View>
-        <ScrollView style={{margin: 16, marginTop: 0}}>
+        <ScrollView style={{ margin: 16, marginTop: 0 }}>
           {selectedIndex === 0 && (
             <View>
               <ParcelOptionsData
                 optionTitle="Tracking Id"
-                optionTitleValue="#264100"
+                optionTitleValue={`#${orderData.data.order_id}`}
               />
               <ParcelOptionsData
                 optionTitle="Items"
-                optionTitleValue="Household Items"
+                optionTitleValue={orderData.data.pickup_location.sending}
               />
               <ParcelOptionsData
                 optionTitle="Parcel Value"
-                optionTitleValue="120,000"
+                optionTitleValue={orderData.data.pickup_location.parcel_value}
               />
               <ParcelOptionsData
                 optionTitle="Parcel Weight"
-                optionTitleValue="250 Tons"
+                optionTitleValue={orderData.data.pickup_location.weight + ' Tons'}
               />
               <ParcelOptionsData
                 optionTitle="Parcel LWH"
-                optionTitleValue="134 feet * 3400 feet * 200 feet"
+                optionTitleValue={
+                  orderData.data.pickup_location.dimensions +
+                  ' feet * ' +
+                  orderData.data.pickup_location.width +
+                  ' feet * ' +
+                  orderData.data.pickup_location.height +
+                  ' feet '
+                }
+                cm
               />
               <ParcelOptionsData
                 optionTitle="Vehicle"
                 optionTitleValue="Mini Truck"
               />
+              {orderData.data.vehicle_details?.vehicle_number &&
+                <ParcelOptionsData
+                  optionTitle="Vehicle Number"
+                  optionTitleValue={orderData.data.vehicle_details.vehicle_number}
+                />}
               <ParcelOptionsData
                 optionTitle="Pickup Date and Time"
-                optionTitleValue="01/12/2020 12:40 PM"
+                optionTitleValue={orderData.data.pickup_location.pickup_date_time}
               />
               <ParcelOptionsData
                 optionTitle="Comment"
-                optionTitleValue="Please drive slowly"
+                optionTitleValue={orderData.data.pickup_location.comment}
               />
+              {orderData.data.transporter_details?.first_name != undefined &&
+                <ParcelOptionsData
+                  optionTitle="Transporter Name"
+                  optionTitleValue={orderData.data.transporter_details.first_name + ' ' + orderData.data.transporter_details.last_name}
+                />}
+              {orderData.data.transporter_details?.phone_number != undefined &&
+                <ParcelOptionsData
+                  optionTitle="Transporter Contact Number"
+                  openDialer={true}
+                  optionTitleValue={orderData.data.transporter_details.phone_number}
+                />}
+              {orderData.data.created_by != undefined &&
+                <>
+                  <ParcelOptionsData
+                    optionTitle="Customer Name"
+                    optionTitleValue={orderData.data.created_by.first_name + ' ' + orderData.data.created_by.last_name}
+                  />
+                  <ParcelOptionsData
+                    optionTitle="Customer Contact Number"
+                    openDialer={true}
+                    optionTitleValue={orderData.data.created_by.phone_number}
+                  />
+                </>
+              }
             </View>
           )}
           {selectedIndex === 1 && (
             <View>
               <View>
                 <Text style={styles.locationTitleText}>Pickup Point</Text>
-                <View style={{marginTop: 8}}>
+                <View style={{ marginTop: 8 }}>
                   <View style={styles.locationView}>
                     <Text
                       style={{
                         ...styles.titleText,
                         fontSize: RFPercentage(2.2),
                       }}>
-                      {pickupAddressData.first_name +
+                      {orderData.data.pickup_location.first_name +
                         ' ' +
-                        pickupAddressData.last_name}
+                        orderData.data.pickup_location.last_name}
                     </Text>
                   </View>
                   <Text style={styles.locationText}>
-                    {pickupAddressData.flat_name +
-                      ', ' +
-                      pickupAddressData.area +
-                      ', ' +
-                      pickupAddressData.city +
-                      ', ' +
-                      pickupAddressData.state +
-                      ' - ' +
-                      pickupAddressData.pincode +
-                      '. ' +
-                      pickupAddressData.country}
+                    {getFormattedAddress(orderData.data.pickup_location)}
                   </Text>
                   <Text style={styles.locationText}>
-                    {pickupAddressData.phone_number}
+                    {orderData.data.pickup_location.phone_number}
                   </Text>
                 </View>
               </View>
-              <View style={{marginTop: 16}}>
+              <View style={{ marginTop: 16 }}>
                 <Text style={styles.locationTitleText}>Drop Point</Text>
-                <View style={{marginTop: 8}}>
+                <View style={{ marginTop: 8 }}>
                   <View style={styles.locationView}>
                     <Text
                       style={{
                         ...styles.titleText,
                         fontSize: RFPercentage(2.2),
                       }}>
-                      {dropAddressData.first_name +
+                      {orderData.data.drop_location.first_name +
                         ' ' +
-                        dropAddressData.last_name}
+                        orderData.data.drop_location.last_name}
                     </Text>
                   </View>
                   <Text style={styles.locationText}>
-                    {dropAddressData.flat_name +
-                      ', ' +
-                      dropAddressData.area +
-                      ', ' +
-                      dropAddressData.city +
-                      ', ' +
-                      dropAddressData.state +
-                      ' - ' +
-                      dropAddressData.pincode +
-                      '. ' +
-                      dropAddressData.country}
+                    {getFormattedAddress(orderData.data.drop_location)}
                   </Text>
                   <Text style={styles.locationText}>
-                    {dropAddressData.phone_number}
+                    {orderData.data.drop_location.phone_number}
                   </Text>
                 </View>
               </View>
+              {orderData.data.distance != undefined &&
+                <View style={{ marginTop: 16 }}>
+                  <Text style={styles.locationTitleText}>Total Distance</Text>
+                  <Text
+                    style={{ ...styles.titleText, fontSize: RFPercentage(2.2) }}>{orderData.data.distance} KM</Text>
+                </View>}
             </View>
           )}
           {selectedIndex === 2 && (
             <View>
               <ParcelOptionsData
                 optionTitle="Payment method"
-                optionTitleValue="Cash on Delivery"
+                optionTitleValue={orderData.data.payment_mode}
               />
               <ParcelOptionsData
                 optionTitle="Total paid amount"
-                optionTitleValue="₹ 23990"
+                optionTitleValue={`₹ ${orderData.data.price}`}
               />
             </View>
           )}
         </ScrollView>
       </View>
-      {selectedHistoryStatus === 0 && (
+      {(selectedHistoryStatus == 0 || selectedHistoryStatus == 1) && (
+        <View style={{ ...styles.actionButtonRow, justifyContent: 'center' }}>
+          {/* <TouchableOpacity
+            style={styles.cancelView}
+            onPress={() =>
+              props.navigation.navigate({
+                routeName: 'CancelOrderScreen',
+                params: {
+                  orderData: orderData,
+                  refreshData: () => {
+                    props.navigation.goBack()
+                  }
+                }
+              })
+            }>
+            <Text style={styles.cancelText}>Reject</Text>
+          </TouchableOpacity> */}
+          <MenuView
+            navigation={props.navigation}
+            data={orderData}
+            isAssigned={selectedHistoryStatus == 0 ? true : false}
+            onRefreshList={() => {
+              setIsLoading(false)
+              dispatch({ type: SET_IS_DRIVER_DETAILS_LOADING })
+              props.navigation.goBack()
+              // loadOrderHistoryData().then(() => {})
+            }}
+            showLoader={() => {
+              // console.log(`showLoader`)
+              setIsLoading(true)
+            }}
+            hideLoader={() => {
+              // console.log(`hideLoader`)
+              setIsLoading(false)
+            }}
+          />
+        </View>
+      )}
+      {/* {selectedHistoryStatus === 0 && (
         <View style={styles.actionButtonRow}>
           <TouchableOpacity
             style={styles.cancelView}
@@ -341,198 +431,17 @@ const DriverDetailScreen = (props) => {
             <Text style={styles.cancelText}>Track Order</Text>
           </TouchableOpacity>
         </View>
-      )}
-      {flagAccept && (
-        <ScrollBottomSheet // If you are using TS, that'll infer the renderItem `item` type
-          componentType="FlatList"
-          snapPoints={[100, '50%', windowHeight - 300]}
-          initialSnapIndex={1}
-          renderHandle={() => (
-            <View>
-              <View style={styles.header}>
-                <View style={styles.panelHandle} />
-                <Text style={{...styles.titleText, marginTop: 8}}>
-                  Assign the driver & Vehicle
-                </Text>
-              </View>
-              <View style={styles.selectView}>
-                <TouchableOpacity
-                  onPress={() => onPressSelectDriver_Vehicle('driver')}>
-                  <Text
-                    style={
-                      flagDriver ? styles.selectText : styles.unSelectText
-                    }>
-                    Select Driver
-                  </Text>
-                </TouchableOpacity>
-                <Text
-                  style={{
-                    ...styles.subTitleText,
-                    marginLeft: 16,
-                    marginRight: 16,
-                  }}>
-                  &gt;
-                </Text>
-                <TouchableOpacity
-                  onPress={() => onPressSelectDriver_Vehicle('vehicle')}>
-                  <Text
-                    style={
-                      flagVehicle ? styles.selectText : styles.unSelectText
-                    }>
-                    Select Vehicle
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.trackingView}>
-                <View style={styles.viewInputText}>
-                  <Image
-                    style={styles.trackingImage}
-                    source={
-                      flagDriver
-                        ? require('../../../assets/assets/Transpoter/Dashboard/add_driver.png')
-                        : require('../../../assets/assets/Transpoter/Dashboard/add_vehicle.png')
-                    }
-                  />
-                  <TextInput
-                    style={styles.weightInputText}
-                    placeholder={
-                      flagDriver ? 'Search Driver' : 'Search Vehicle'
-                    }
-                    returnKeyType="done"
-                    value={search.value}
-                    onChangeText={(text) => setSearch(text)}
-                    error={!!search.error}
-                    errorText={search.error}
-                    autoCapitalize="none"
-                    autoCompleteType="name"
-                    textContentType="name"
-                    keyboardType="default"
-                    ref={(ref) => {
-                      this._searchinput = ref;
-                    }}
-                    onSubmitEditing={() => Keyboard.dismiss}
-                  />
-                  <View style={styles.searchView}>
-                    <Image
-                      style={{...styles.trackingImage, marginLeft: 0}}
-                      source={require('../../../assets/assets/dashboard/search.png')}
-                    />
-                  </View>
-                </View>
-              </View>
-              <Text
-                style={{
-                  ...styles.titleText,
-                  marginLeft: 16,
-                  backgroundColor: Colors.backgroundColor,
-                }}>
-                {flagDriver
-                  ? '12 Drivers are available'
-                  : '12 Vehicles are available'}
-              </Text>
-            </View>
-          )}
-          data={OrderDetailsOptions}
-          keyExtractor={(i) => i}
-          renderItem={({item}) => (
-            <View>
-              {flagDriver && (
-                <TouchableOpacity
-                  style={styles.itemRow}
-                  onPress={() => {
-                    setSelectedDriverIndex(item.id);
-                  }}>
-                  <View style={{...styles.itemRow, marginTop: 0}}>
-                    {selectedDriverIndex === item.id ? (
-                      <Image
-                        style={styles.itemImage}
-                        source={require('../../../assets/assets/Transpoter/Dashboard/selected_tick.png')}
-                      />
-                    ) : (
-                      <Image
-                        style={styles.itemImage}
-                        source={require('../../../assets/assets/dashboard/parcelImage.jpeg')}
-                      />
-                    )}
-                    <Text
-                      style={
-                        selectedDriverIndex === item.id
-                          ? styles.selectTitleText
-                          : styles.unSelectTitleText
-                      }>
-                      James Snow
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-              {flagVehicle && (
-                <TouchableOpacity
-                  style={styles.itemRow}
-                  onPress={() => {
-                    setSelectedVehicleIndex(item.id);
-                  }}>
-                  <View style={{...styles.itemRow, marginTop: 0}}>
-                    {selectedVehicleIndex === item.id ? (
-                      <Image
-                        style={styles.itemImage}
-                        source={require('../../../assets/assets/Transpoter/Dashboard/selected_tick.png')}
-                      />
-                    ) : (
-                      <Image
-                        style={styles.itemImage}
-                        source={require('../../../assets/assets/dashboard/heavy_truck.png')}
-                      />
-                    )}
-                    <Text
-                      style={
-                        selectedVehicleIndex === item.id
-                          ? styles.selectTitleText
-                          : styles.unSelectTitleText
-                      }>
-                      Heavy Truck I GJ-DD 407
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-          contentContainerStyle={styles.contentContainerStyle}
-        />
-      )}
-      {flagAccept && flagDriver && (
-        <View style={{...styles.actionButtonRow, justifyContent: 'center'}}>
-          <TouchableOpacity
-            style={{
-              ...styles.cancelView,
-              backgroundColor: Colors.primaryColor,
-            }}
-            onPress={() => onPressDriverNext()}>
-            <Text style={styles.cancelText}>Next</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-      {flagAccept && flagVehicle && (
-        <View style={{...styles.actionButtonRow, justifyContent: 'center'}}>
-          <TouchableOpacity
-            style={{
-              ...styles.cancelView,
-              backgroundColor: Colors.acceptedViewColor,
-            }}
-            onPress={() => onPressVehicleAssign()}>
-            <Text style={styles.cancelText}>Accept Order</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      )} */}
       {popup && (
         <Modal isVisible={popup}>
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             <View style={styles.centeredView}>
               <View style={styles.popupView}>
                 <Image
                   style={styles.clickImage}
                   source={require('../../../assets/assets/PlaceOrder/checkout_click.png')}
                 />
-                <Text style={{...styles.totalAmountText, textAlign: 'center'}}>
+                <Text style={{ ...styles.totalAmountText, textAlign: 'center' }}>
                   Your order has been successfully assigned.
                 </Text>
                 <TouchableOpacity
@@ -549,7 +458,8 @@ const DriverDetailScreen = (props) => {
           </View>
         </Modal>
       )}
-    </View>
+      <Loader loading={isLoading} />
+    </SafeAreaView>
   );
 };
 
@@ -645,7 +555,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.backgroundColor,
-    shadowOffset: {width: 0, height: 5},
+    shadowOffset: { width: 0, height: 5 },
     shadowRadius: 5,
     shadowOpacity: 0.15,
     elevation: 5,
@@ -679,7 +589,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    shadowOffset: {width: 5, height: 0},
+    shadowOffset: { width: 5, height: 0 },
     shadowRadius: 5,
     shadowOpacity: 0.25,
     elevation: 5,
@@ -780,6 +690,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     height: 50,
     width: 50,
+  },
+  totalAmountText: {
+    margin: 16,
+    fontFamily: 'SofiaPro-SemiBold',
+    fontSize: RFPercentage(2),
   },
   homeButtonView: {
     margin: 16,

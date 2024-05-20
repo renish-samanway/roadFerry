@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React from 'react';
 import {View, StyleSheet, Dimensions} from 'react-native';
 
 // Import the Plugins and Thirdparty library.
@@ -13,25 +13,11 @@ import Colors from '../../helper/extensions/Colors';
 
 // Load the main class.
 
-/* const _onChangeTextValue = (text) => {
-  console.log(`_onChangeTextValue:`, text)
-} */
-
 const GooglePlacesTextInput = (props) => {
-  const ref = useRef();
-  const {placeholder, setAddressText, soureValue, destinationValue, addressValue} = props;
-  
-  useEffect(() => {
-    if (setAddressText != '') {
-      console.log(`setAddressText:`, setAddressText)
-      ref.current?.setAddressText(setAddressText);
-    }
-  });
-
+  const {placeholder, soureValue, destinationValue} = props;
   return (
-    <View style={{ flex: 1, marginLeft: 10 }}>
+    <View>
       <GooglePlacesAutocomplete
-        ref={ref}
         placeholder={placeholder}
         minLength={3}
         returnKeyType={'next'}
@@ -40,28 +26,17 @@ const GooglePlacesTextInput = (props) => {
         renderDescription={(row) => row.description}
         onPress={(data, details = null) => {
           // 'details' is provided when fetchDetails = true
-          console.log(`data: ${JSON.stringify(data)}`)
-          console.log(`details: ${JSON.stringify(details)}`)
           if (placeholder === 'Pickup Location') {
             soureValue(
               data.description,
               details.geometry.location.lat,
               details.geometry.location.lng,
-              data,
-              details
             );
-          } else if (placeholder === 'Destination') {
+          } else {
             destinationValue(
               data.description,
               details.geometry.location.lat,
               details.geometry.location.lng,
-              data,
-              details
-            );
-          } else {
-            addressValue(
-              data,
-              details
             );
           }
           // console.log('Data is :', data);
@@ -69,9 +44,6 @@ const GooglePlacesTextInput = (props) => {
           // console.log('Location is :', details.geometry.location);
           console.log('Latitude is :', details.geometry.location.lat);
           console.log('Longitude is :', details.geometry.location.lng);
-        }}
-        onNotFound={() => {
-          console.log(`onNotFound`)
         }}
         // getDefaultValue={(data) => {
         //   if (placeholder === 'Source') {
@@ -83,21 +55,23 @@ const GooglePlacesTextInput = (props) => {
         query={{
           key: AppConstants.google_place_api_key,
           language: 'en',
-          components: 'country:in',
-          // types: 'address'
+          // types: '(cities)',
         }}
         // currentLocation={true}
         // currentLocationLabel="Current location"
         enablePoweredByContainer={false}
         GooglePlacesDetailsQuery={{
-          fields: ['formatted_address', 'geometry'],
-          //fields: 'geometry',
+          // fields: ['formatted_address', 'geometry'],
+          fields: 'geometry',
         }}
         // setAddressText={(text) => soureValue(text)}
         styles={{
           textInputContainer: {
+            marginLeft: 8,
+            marginBottom: 8,
             // backgroundColor: Colors.subViewBGColor,
             height: 45,
+            width: Dimensions.get('window').width - 64,
             borderRadius: 10,
           },
           textInput: {
@@ -115,7 +89,6 @@ const GooglePlacesTextInput = (props) => {
             color: '#1faadb',
           },
         }}
-        {...props}
       />
     </View>
   );

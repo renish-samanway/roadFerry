@@ -1,26 +1,67 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Dimensions,
+  TouchableOpacity,
+  StatusBar,
+  SafeAreaView,
+  ScrollView,
+  Keyboard,
+  KeyboardAvoidingView,
+  Alert,
+  NativeModules,
+} from 'react-native';
+
+// Import the Plugins and Thirdparty library.
+import { RFPercentage, RFValue } from 'react-native-responsive-fontsize';
 import auth, { firebase } from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import OTPInputView from '@twotalltotems/react-native-otp-input';
-import moment from 'moment';
-import React, { useEffect, useRef, useState } from 'react';
-import {
-  Alert, Image, Keyboard,
-  KeyboardAvoidingView, SafeAreaView,
-  ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View
-} from 'react-native';
-// Import the Plugins and Thirdparty library.
-import { RFPercentage } from 'react-native-responsive-fontsize';
-import { useDispatch } from 'react-redux';
-import Loader from '../../components/design/Loader';
-import AppConstants from '../../helper/constants/AppConstants';
+
 // Import the JS file.
+
 import Colors from '../../helper/extensions/Colors';
+import Button from '../../components/design/Button';
+import TextInput from '../../components/design/TextInput';
+import PasswordTextInput from '../../components/design/PasswordTextInput';
+
+import {
+  emailValidator,
+  passwordValidator,
+} from '../../helper/extensions/Validator';
+import Loader from '../../components/design/Loader';
+import OTPInputView from '@twotalltotems/react-native-otp-input';
+import AppConstants from '../../helper/constants/AppConstants';
+import moment from 'moment';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppPreference from '../../helper/preference/AppPreference';
+import { useDispatch } from 'react-redux';
+import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData';
 import { setIsLoginUser } from '../../navigation/MainNavigation';
-import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData'
+import { NavigationActions, StackActions } from 'react-navigation';
+import NotificationCall from '../../helper/NotificationCall';
+import { useSelector } from 'react-redux';
 
 // Load the main class.
+const resetDriverDashboardAction = StackActions.reset({
+  index: 0,
+  actions: [NavigationActions.navigate({ routeName: "DriverDashboard" })]
+});
+
+const resetDashboardAction = StackActions.reset({
+  index: 0,
+  actions: [NavigationActions.navigate({ routeName: "Dashboard" })]
+});
+
+const transporterRegistrationAction = (user_id) => {
+  return StackActions.reset({
+    index: 0,
+    actions: [NavigationActions.navigate({ routeName: "TransporterRegistration", params: { user_id: user_id, is_from_login: true } })]
+  })
+};
+
 let setOpenTime = moment(new Date());
 let seconds = 30;
 
@@ -28,22 +69,22 @@ const VerificationScreen = (props) => {
   const dispatch = useDispatch();
 
   const phoneNumber = props.navigation.getParam('phoneNumber');
-  const isLogin = props.navigation.getParam('isLogin');
   let phoneNumberWithCode = `${AppConstants.country_code} ${phoneNumber}`
   let confirm = props.navigation.getParam('confirm');
-  let data = null
-  if (isLogin) {
-    data = props.navigation.getParam('loginData');
-  } else {
-    data = props.navigation.getParam('registerData');
-  }
+  let data = props.navigation.getParam('loginData');
+  const isUserVerification = props.navigation.getParam('isUserVerification', false)
+  const orderData = props.navigation.getParam('orderData', undefined)
+  const status = props.navigation.getParam('status')
+  const user = useSelector(state=>state.fetchProfileData.fetchProfileData)
+  const userUID = useSelector(state=>state.fetchProfileData.userUID)
+  console.log('verification screen data', isUserVerification, orderData)
   /* if (confirm) {
     console.log(`confirm:`, JSON.parse(confirm))
   } else {
     console.log(`confirm undefine`)
   } */
 
-  const [otp, setOtp] = useState({value: '', error: ''});
+  const [otp, setOtp] = useState({ value: '', error: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [isResendNow, setIsResendNow] = useState(false)
   const [timer, setTimer] = useState(0)
@@ -54,8 +95,8 @@ const VerificationScreen = (props) => {
     Alert.alert(
       'Alert',
       'Phone Number invalid!',
-      [{text: 'OK', onPress: () => console.log('OK Pressed')}],
-      {cancelable: false},
+      [{ text: 'OK', onPress: () => console.log('OK Pressed') }],
+      { cancelable: false },
     );
   }
 
@@ -110,7 +151,7 @@ const VerificationScreen = (props) => {
         clearInterval(clockCall);
       }
     };
-  }, []) 
+  }, [])
 
   let onlyNumberFieldRegex = '^[0-9]+$';
   const validateOnlyNumber = text => {
@@ -122,47 +163,143 @@ const VerificationScreen = (props) => {
     }
   };
 
+
+  const onCompleteOrder = (orderData) => {
+    console.log('menu item is pressed', orderData)
+    const { user_type } = user
+    if (user_type == 'driver') {
+        firestore()
+            .collection('users')
+            .doc(orderData.data.transporter_uid)
+            .collection('driver_details')
+            .doc(orderData.data.driver_details.driver_id)
+            .update({ is_assign: false }).then(() => {
+                firestore()
+                    .collection('users')
+                    .doc(orderData.data.transporter_uid)
+                    .update({ is_assign: false, is_request: true }).then(() => {
+                        firestore().collection('vehicle_details').doc(orderData.data.vehicle_details.vehicle_id).update({is_assign:false})
+                        firestore()
+                            .collection('users')
+                            .doc(userUID)
+                            .update({ is_assign: false }).then(() => {
+                                firestore()
+                                .collection('users')
+                                .doc(orderData.data.transporter_uid)
+                                .collection('vehicle_details')
+                                .doc(orderData.data.vehicle_details.vehicle_id)
+                                .update({is_assign:false})
+                            }).catch((e) => console.log('while updating vehicle exception is generated', e))
+                    }).catch((e) => console.log('while updating firebase driver exception is generated', e))
+            }).catch((e) => console.log('exception is generated', e))
+    }
+    else {
+        if(user_type == 'transporter' && orderData.data.driver_details.user_uid == userUID){
+            firestore()
+            .collection('users')
+            .doc(userUID)
+            .update({is_assign: false, is_request: true})
+            .then(()=>{
+                    console.log('transporter is updated')
+                    firestore()
+                    .collection('users')
+                    .doc(userUID)
+                    .collection('driver_details')
+                    .doc(orderData.data.driver_details.driver_id)
+                    .update({is_assign:false})
+                    .then(()=>{
+                        console.log('driver of this transporter is updated')
+                        firestore().collection('vehicle_details').doc(orderData.data.vehicle_details.vehicle_id).update({is_assign:false})
+                        firestore()
+                        .collection('users')
+                        .doc(userUID)
+                        .collection('vehicle_details')
+                        .doc(orderData.data.vehicle_details.vehicle_id)
+                        .update({is_assign:false})
+                    })
+                    .catch((e)=>console.log('exception is generated while updating driver details',e))
+            })
+            .catch((e)=>console.log('exception is generated while updating transporter',e))
+        }
+        // user type transporter as driver
+    }
+}
+
+  const updateFirebaseOrderDocument = () => {
+    const { id, data } = orderData;
+    console.log('order id', id)
+    firestore()
+      .collection('order_details')
+      .doc(id)
+      .update({ status: status })
+      .then(() => {
+        setIsLoading(false);
+        if (status == "on-loading") {
+          let parameters = {
+            userId: data.requested_uid,
+            orderId: id,
+            type: "started"
+          }
+          NotificationCall(parameters)
+        }
+        if (status == "completed") {
+          let parameters = {
+            userId: data.requested_uid,
+            orderId: id,
+            type: "unloaded"
+          }
+          NotificationCall(parameters)
+          onCompleteOrder(orderData)
+        }
+        props.navigation.pop();
+      })
+      .catch((e) => {
+        console.log('exception is generated', e)
+        setIsLoading(false)
+      })
+  }
+
   async function confirmCode() {
     try {
       console.log(`otp.value: ${otp.value}`)
       // console.log(`confirm:`, confirm)
       setIsLoading(true)
       confirm.confirm(otp.value)
-      .then(response => {
-        // console.log(`confirmResult:`, confirmResult)
-        // console.log(`confirmResult: ${JSON.stringify(response)}`)
-        console.log('rootRef is :', response.user.uid);
-        if (isLogin) {
-          console.log(`sign in`)
-          // setIsLoading(false);
-          response.user.getIdToken(true).then(token => {
-            console.log('token:', token);
-            data.forEach(documentSnapshot => {
-              console.log('User ID: ', documentSnapshot.id);
-              // if (documentSnapshot.id == response.user.uid) {
+        .then(response => {
+          if (isUserVerification) {
+            updateFirebaseOrderDocument()
+          } else {
+
+            // console.log(`confirmResult:`, confirmResult)
+            // console.log(`confirmResult: ${JSON.stringify(response)}`)
+            console.log('rootRef is :', response.user.uid);
+            // setIsLoading(false);
+            response.user.getIdToken(true).then(token => {
+              console.log('token:', token);
+              data.forEach(documentSnapshot => {
+                console.log('documentSnapshot.id:', documentSnapshot.id);
+                console.log('user.uid:', response.user.uid);
                 AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
-                AsyncStorage.setItem(AppPreference.LOGIN_UID,response.user.uid);
-                AsyncStorage.setItem(AppPreference.LOGIN_TOKEN,token);
+                AsyncStorage.setItem(AppPreference.LOGIN_UID, response.user.uid);
+                AsyncStorage.setItem(AppPreference.LOGIN_TOKEN, token);
 
                 AsyncStorage.getItem(AppPreference.FCM_TOKEN).then((fcmToken) => {
                   if (fcmToken == null) {
                     setIsLoading(false);
                     console.log(`AppPreference.FCM_TOKEN.null`)
                   } else {
-                    setIsLoading(false);
                     console.log(`AppPreference.FCM_TOKEN:`, fcmToken)
 
                     let updatedData = { access_token: token, fcm_token: fcmToken }
                     firestore()
-                    .collection('users')
-                    .doc(documentSnapshot.id)
-                    .update(updatedData)
+                      .collection('users')
+                      .doc(documentSnapshot.id)
+                      .update(updatedData)
 
-                    let userData = {...documentSnapshot.data()}
+                    let userData = { ...documentSnapshot.data() }
                     userData.access_token = token
                     userData.fcm_token = fcmToken
                     console.log(`userData:`, userData)
-
                     AsyncStorage.setItem(
                       AppPreference.LOGIN_USER_DATA,
                       JSON.stringify(userData),
@@ -172,83 +309,41 @@ const VerificationScreen = (props) => {
                         fetchProfileData: documentSnapshot.data(),
                         userUID: documentSnapshot.id
                       });
-
-                      setIsLoginUser(true)
-                      props.navigation.navigate({
-                        routeName: 'Dashboard',
-                      });
-                      // props.navigation.goBack()
+                      let userType = documentSnapshot.data().user_type.toLowerCase();
+                      if (userType == 'driver') {
+                        /* props.navigation.navigate({
+                          routeName: 'DriverDashboard',
+                        }); */
+                        props.navigation.dispatch(resetDriverDashboardAction)
+                      } else {
+                        /* props.navigation.navigate({
+                          routeName: 'Dashboard',
+                        }); */
+                        if (documentSnapshot.data().is_registered) {
+                          props.navigation.dispatch(resetDashboardAction)
+                        } else {
+                          props.navigation.dispatch(transporterRegistrationAction(documentSnapshot.id))
+                        }
+                      }
                     })
                   }
                 });
-              // }
-            });
-          })
-        } else {
-          console.log(`sign up`)
-          if (data != null) {
-            response.user.getIdToken(true).then(token => {
-              console.log('token:', token);
-              AsyncStorage.getItem(AppPreference.FCM_TOKEN).then((fcmToken) => {
-                if (fcmToken == null) {
-                  setIsLoading(false);
-                  console.log(`AppPreference.FCM_TOKEN.null`)
-                } else {
-                  console.log(`AppPreference.FCM_TOKEN:`, fcmToken)
-                  data.fcm_token = fcmToken
-                  data.access_token = token
-                  console.log(`data:`, data)
-                  firestore()
-                  .collection('users')
-                  .doc(response.user.uid)
-                  .set(data)
-                  .then(querySnapshot => {
-                    // console.log('Total users: ', querySnapshot.size);
-                    setIsLoading(false);
-                    AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
-                    AsyncStorage.setItem(AppPreference.LOGIN_TOKEN,token);
-                    AsyncStorage.setItem(AppPreference.LOGIN_UID, response.user.uid).then(
-                      () => {
-                        console.log(`AsyncStorage.setItem.LOGIN_UID`)
-                        AsyncStorage.setItem(
-                          AppPreference.LOGIN_USER_DATA,
-                          JSON.stringify(data),
-                        ).then(() => {
-                          dispatch({
-                            type: fetchProfileDataActions.FETCH_PROFILE_DATA,
-                            fetchProfileData: data,
-                            userUID: response.user.uid
-                          });
-
-                          setIsLoginUser(true)
-                          props.navigation.navigate({
-                            routeName: 'Dashboard',
-                          });
-                        })
-                      },
-                    );
-                  }).catch(error => {
-                    setIsLoading(false);
-                    console.error(error)
-                  });
-                }
               });
             })
           }
-        }
-      })
-      .catch(error => {
-        setIsLoading(false);
-        alert(error.message)
-        console.log(error)
-      });;
+        })
+        .catch(error => {
+          setIsLoading(false);
+          alert(error.message)
+          console.log(error)
+        });;
     } catch (error) {
       setIsLoading(false);
       console.log('Invalid code.');
-      setOtp({value: otp.value, error: "Invalid code."})
+      setOtp({ value: otp.value, error: "Invalid code." })
     }
   }
-  
+
   function onPressLogin() {
     if (otp.value.length < 6) {
       setOtp({ value: otp.value, error: "Please enter valid code." })
@@ -256,28 +351,6 @@ const VerificationScreen = (props) => {
     }
     confirmCode()
   };
-
-  const textInputRef = useRef(null);
-
-  useEffect(() => {
-    const focusTextInput = () => {
-      if (textInputRef.current) {
-        textInputRef.current.focus();
-      }
-    };
-
-    // Add an event listener for when the screen is focused
-    const screenFocusListener = props.navigation.addListener('focus', focusTextInput);
-
-    return () => {
-      // Remove the event listener when the screen is unfocused
-      screenFocusListener.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    textInputRef.current.focusField(0);
-  }, []);
 
   return (
     <>
@@ -289,7 +362,7 @@ const VerificationScreen = (props) => {
         style={{flex: 0, backgroundColor: Colors.mainBackgroundColor}}
       /> */}
       <SafeAreaView
-        style={{flex: 1, backgroundColor: Colors.mainBackgroundColor}}>
+        style={{ flex: 1, backgroundColor: Colors.mainBackgroundColor }}>
         <ScrollView style={styles.container}>
           <KeyboardAvoidingView behavior="position">
             <Loader loading={isLoading} />
@@ -305,12 +378,11 @@ const VerificationScreen = (props) => {
                 {phoneNumberWithCode}
               </Text>
             </Text>
-            <View style={{padding: 16}}>
+            <View style={{ padding: 16 }}>
               <OTPInputView
+              autoFocusOnLoad={false}
                 pinCount={6}
-                ref={textInputRef}
-                autoFocusOnLoad={true}
-                style={{height: 64, alignSelf: 'center', width: '94%'}}
+                style={{ height: 64, alignSelf: 'center', width: '94%' }}
                 codeInputFieldStyle={{
                   width: 44,
                   height: 44,
@@ -329,7 +401,7 @@ const VerificationScreen = (props) => {
                   if (!validateOnlyNumber(code)) {
                     return;
                   }
-                  setOtp({value: code, error: ''})
+                  setOtp({ value: code, error: '' })
                   /* this.setState({otp: '' + code, errorMessage: ''}, () => {
                     let tIsDisable = true;
                     if (this.state.otp.length == 4) {
@@ -356,7 +428,7 @@ const VerificationScreen = (props) => {
                 justifyContent: 'center',
               }}>
               {isResendNow ? (
-                <View style={{flexDirection: 'row', justifyContent: 'center'}}>
+                <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                   <Text
                     style={{
                       fontSize: 16,
@@ -381,7 +453,7 @@ const VerificationScreen = (props) => {
                   </TouchableOpacity>
                 </View>
               ) : (
-                <View style={{flexDirection: 'row', justifyContent: 'center'}}>
+                <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                   <Text
                     style={{
                       fontSize: 16,

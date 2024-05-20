@@ -13,7 +13,6 @@ import {
   Keyboard,
 } from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
-import { calculatePrice } from '../../../helper/Price';
 
 // Import the Plugins and Thirdparty library.
 import {RFPercentage} from 'react-native-responsive-fontsize';
@@ -21,10 +20,8 @@ import ImagePicker from 'react-native-image-picker';
 // import ActionSheet from 'react-native-actionsheet';
 import Modal from 'react-native-modal';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import {addMinutes, format} from 'date-fns';
+import {format} from 'date-fns';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import * as addAddressActions from '../../../store/actions/addAddress/addAddress';
-import * as dropAddAddressActions from '../../../store/actions/addAddress/dropAddAddress';
 
 // Import the JS file.
 
@@ -44,51 +41,26 @@ import {
   isDateSelectorValidator,
   commentValidator,
 } from '../../../helper/extensions/Validator';
-import DropLocationData from '../../../helper/models/addParcelDetails/DropLocationData';
-import AppConstants from '../../../helper/constants/AppConstants';
-import Loader from '../../../components/design/Loader';
-import AppPreference from '../../../helper/preference/AppPreference';
-import moment from 'moment';
 // Load the main class.
 const windowWidth = Dimensions.get('window').width;
 
 const AddParcelDetails = (props) => {
-  const sourceData = props.navigation.getParam('source');
-  const destinationData = props.navigation.getParam('destination');
   const selectedData = props.navigation.getParam('selectedData');
-  const selectedVehicleData = props.navigation.getParam('selectedVehicleData');
-  const vehicle_type = props.navigation.getParam('vehicle_type');
-  const priceValue = props.navigation.getParam('price');
-  const weightValue = props.navigation.getParam('weight');
-  const dimensionsValue = props.navigation.getParam('dimensions');
-  const widthValue = props.navigation.getParam('width');
-  const heightValue = props.navigation.getParam('height');
-
-  console.log(`AddParcelDetails.sourceData: ${JSON.stringify(sourceData)}`);
-  console.log(`AddParcelDetails.destinationData: ${JSON.stringify(destinationData)}`);
-
-  /* console.log('priceValue:', priceValue);
-  console.log('weightValue:', weightValue);
-  console.log('dimensionsValue:', dimensionsValue);
-  console.log('widthValue:', widthValue);
-  console.log('heightValue:', heightValue); */
+  console.log('Selected Data', selectedData);
   const [popup, setPopup] = useState(false);
 
   const [flagPickupPoint, setFlagPickupPoint] = useState(true);
   const [flagDropPoint, setFlagDropPoint] = useState(false);
   const [sending, setSending] = useState({value: '', error: ''});
   const [parcelValue, setParcelValue] = useState({value: '', error: ''});
-  const [weight, setWeight] = useState({value: weightValue, error: ''});
-  const [dimensions, setDimensions] = useState({value: dimensionsValue, error: ''});
-  const [width, setWidth] = useState({value: widthValue, error: ''});
-  const [height, setHeight] = useState({value: heightValue, error: ''});
+  const [weight, setWeight] = useState({value: '', error: ''});
+  const [dimensions, setDimensions] = useState({value: '', error: ''});
+  const [width, setWidth] = useState({value: '', error: ''});
+  const [height, setHeight] = useState({value: '', error: ''});
   const [comment, setComment] = useState({value: '', error: ''});
-  const [notifyRecipient, setNotifyRecipient] = useState(false);
-  const [sendEndTripOtpToReceiver, setSendEndTripOtpToReceiver] = useState(false);
 
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isDateSelected, setIsDateSelected] = useState('Pickup Date and Time');
-  const [isLoading, setIsLoading] = useState(false);
 
   const showDatePicker = () => {
     setDatePickerVisibility(true);
@@ -100,14 +72,8 @@ const AddParcelDetails = (props) => {
 
   const handleConfirm = (date) => {
     var formattedDate = format(date, 'dd-MMM-yyyy HH:mm');
-    if(moment(date).isAfter(moment())){
-      setIsDateSelected(formattedDate);
-      hideDatePicker();
-    } else {
-      Alert.alert("Validation", "Please choose a valid date and time.")
-      hideDatePicker();
-    }
-    
+    setIsDateSelected(formattedDate);
+    hideDatePicker();
   };
   const pickupAddressData = useSelector(
     (state) => state.pickupAddressData.pickupAddressData,
@@ -123,73 +89,7 @@ const AddParcelDetails = (props) => {
   );
   const dispatch = useDispatch();
 
-  const state = useSelector((state) => state);
-
-  console.log(state);
-
-  useEffect(() => {
-    const {setDestinationTextValue, fetchProfileData} = state;
-    const {data, details} = setDestinationTextValue.destinationAllData;
-
-    dispatch(
-      dropAddAddressActions.setDropAddressData(
-        {
-          longitude: details.geometry.location.lng,
-          latitude: details.geometry.location.lat,
-        },
-        data.place_id,
-        fetchProfileData.fetchProfileData.first_name,
-        fetchProfileData.fetchProfileData.last_name,
-        fetchProfileData.fetchProfileData.email,
-        fetchProfileData.fetchProfileData.phone_number,
-        details.formatted_address,
-        details.address_components.find((d) => d.types.includes('sublocality'))?.long_name,
-        details.address_components.find((d) => d.types.includes('locality'))?.long_name,
-        details.address_components.find((d) => d.types.includes('administrative_area_level_1'))?.long_name,
-        details.address_components.find((d) => d.types.includes('country'))?.long_name,
-        details.address_components.find((d) => d.types.includes('postal_code'))?.long_name,
-        undefined,
-        'no',
-        '',
-        false
-      ),
-    );
-    
-  },[])
-
-
-  useEffect(() => {
-    const {setSourceTextValue, fetchProfileData} = state;
-    const {data, details} = setSourceTextValue.sourceAllData;
-
-    dispatch(
-      addAddressActions.setPickupAddressData(
-        {
-          longitude: details.geometry.location.lng,
-          latitude: details.geometry.location.lat,
-        },
-        data.place_id,
-        fetchProfileData.fetchProfileData.first_name,
-        fetchProfileData.fetchProfileData.last_name,
-        fetchProfileData.fetchProfileData.email,
-        fetchProfileData.fetchProfileData.phone_number,
-        details.formatted_address,
-        details.address_components.find((d) => d.types.includes('sublocality'))?.long_name,
-        details.address_components.find((d) => d.types.includes('locality'))?.long_name,
-        details.address_components.find((d) => d.types.includes('administrative_area_level_1'))?.long_name,
-        details.address_components.find((d) => d.types.includes('country'))?.long_name,
-        details.address_components.find((d) => d.types.includes('postal_code'))?.long_name,
-        undefined,
-        'no',
-        '',
-        false
-      ),
-    );
-    
-  },[])
-
   const onPressSelectLocation = (valueText) => {
-    //console.log(`valueText: ${valueText}`)
     if (valueText === 'pickup') {
       setFlagPickupPoint(true);
       setFlagDropPoint(false);
@@ -198,91 +98,12 @@ const AddParcelDetails = (props) => {
       // setFlagDropPoint(true);
       pickupLocationCheckValidation('drop');
     }
-
-    //console.log(`dropLocation: ${JSON.stringify(dropAddressData)}`)
   };
 
   // Image Picker view method
   const [resourcePathImage, setResourcePathImage] = useState('');
-  const [echallanError, setEchallanError] = useState(false)
-
-  const checkDistanceBetweenPoints = (lat1, lng1, lat2, lng2, changeValue, isPickup) => {
-    var urlToFetchDistance = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=' + lat1 + ',' + lng1 + '&destinations=' + lat2 + '%2C' + lng2 + '&key=' + AppConstants.google_place_api_key;// + '&mode=driving';
-    console.log(`urlToFetchDistance: ${urlToFetchDistance}`)
-    setIsLoading(true)
-    fetch(urlToFetchDistance)
-      .then(res => {
-        return res.json()
-      })
-      .then(res => {
-        console.log('res from api:',res)
-        if(res.rows[0].elements[0].status =='OK'){
-        var tDistanceValue = (res.rows[0].elements[0].distance.value);
-        let finalDistanceValue = (((tDistanceValue/1000) * 10) / 10).toFixed(2)
-        console.log(`tDistanceValue: ${tDistanceValue}`)
-        console.log(`finalDistanceValue: ${finalDistanceValue}`)
-        if (finalDistanceValue > AppPreference.MIN_DISTANCE) {
-          alert(`You cannot select an address that is more than ${AppPreference.MIN_DISTANCE} km from the previously entered address.`)
-          setIsLoading(false)
-        } else {
-          if (isPickup) {
-            onPressPickupNext(changeValue);
-            setIsLoading(false)
-          } else {
-            /* let price = calculatePrice(finalDistanceValue, selectedVehicleData)
-            console.log(`price: ${price}`) */
-            // openCheckoutScreen(price)
-            fetchDistanceBetweenPoints(
-              pickupAddressData.coordinates.latitude, 
-              pickupAddressData.coordinates.longitude,
-              dropAddressData.coordinates.latitude, 
-              dropAddressData.coordinates.longitude
-            )
-          }
-        }}
-        else{
-          setIsLoading(false)
-          Alert.alert(
-            'Alert',
-            'Selected address was incorrect please update or add new address and try again.',
-            [{text: 'OK', onPress: () => console.log('OK Pressed')}],
-            {cancelable: false},
-          );
-        }
-      })
-      .catch(error => {
-        console.log("Problem occurred: ", error);
-        setIsLoading(false)
-      });
-  }
-
-  const fetchDistanceBetweenPoints = (lat1, lng1, lat2, lng2) => {
-    var urlToFetchDistance = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=' + lat1 + ',' + lng1 + '&destinations=' + lat2 + '%2C' + lng2 + '&key=' + AppConstants.google_place_api_key;// + '&mode=driving';
-    console.log(`urlToFetchDistance: ${urlToFetchDistance}`)
-    setIsLoading(true)
-    fetch(urlToFetchDistance)
-      .then(res => {
-        return res.json()
-      })
-      .then(res => {
-        console.log(`res: ${JSON.stringify(res)}`)
-        var tDistanceValue = (res.rows[0].elements[0].distance.value);
-        let finalDistanceValue = (((tDistanceValue/1000) * 10) / 10).toFixed(2)
-        console.log(`tDistanceValue: ${tDistanceValue}`)
-        console.log(`finalDistanceValue: ${finalDistanceValue}`)
-        let price = calculatePrice(finalDistanceValue, selectedVehicleData)
-        const finalPrice = price.toFixed(2)
-        openCheckoutScreen(finalPrice, finalDistanceValue)
-        setIsLoading(false)
-      })
-      .catch(error => {
-        console.log("Problem occurred: ", error);
-        setIsLoading(false)
-      });
-  }
 
   const pickupLocationCheckValidation = (changeValue) => {
-    //console.log(`changeValue: ${changeValue}`)
     const sendingError = sendigValidator(sending.value);
     const parcelValueError = parcelValueValidator(parcelValue.value);
     const weightError = weightValidator(weight.value);
@@ -291,7 +112,7 @@ const AddParcelDetails = (props) => {
     const heightError = heightValidator(height.value);
     const isDateSelectedError = isDateSelectorValidator(isDateSelected);
     const commentError = commentValidator(comment.value);
-    console.log('resource path',resourcePathImage)
+
     if (pickupAddressData == '') {
       Alert.alert(
         'Alert',
@@ -347,58 +168,14 @@ const AddParcelDetails = (props) => {
     } else if (commentError) {
       setComment({...comment, error: commentError});
       return;
-    }
-    else if(resourcePathImage==''){
-      setEchallanError(true);
-      return;
-    }
-    else if(!isValidAddress(pickupAddressData)){
-      Alert.alert(
-        'Alert',
-        'Pickup location is missing some details.',
-        [{text: 'Update', onPress: () => openAddAddressScreen(true)}],
-        {cancelable: false},
-      );
-      return;
-    }
-    else {
-      setEchallanError(false)
-      console.log(`pickupAddressData: ${JSON.stringify(pickupAddressData)}`)
-      if (pickupAddressData && pickupAddressData.coordinates && sourceData) {
-        checkDistanceBetweenPoints(
-          pickupAddressData.coordinates.latitude, 
-          pickupAddressData.coordinates.longitude, 
-          sourceData.latitude, 
-          sourceData.longitude, 
-          changeValue,
-          true
-        )
-      } else {
-        alert("Something went wrong. Please try again.")
-      }
-      /* if (true) {
-        Alert.alert(
-          'Alert',
-          'Please add pickup location',
-          [{text: 'OK', onPress: () => console.log('OK Pressed')}],
-          {cancelable: false},
-        );
-      } else {
-        onPressPickupNext(changeValue);
-      } */
+    } else {
+      onPressPickupNext(changeValue);
     }
   };
-
   const onPressPickupNext = (changeValue) => {
-    console.log('Sending data is : ', pickupAddressData);
-    let eChallan = {}
-    if (resourcePathImage != '') {
-      eChallan = resourcePathImage
-    }
-    // console.log(`eChallan:`, eChallan)
+    console.log('Sending data is : ', sending.value);
     dispatch(
       setPickupLocationDataActions.setPickupLocationData(
-        pickupAddressData.coordinates,
         pickupAddressData.first_name,
         pickupAddressData.last_name,
         pickupAddressData.email,
@@ -417,7 +194,6 @@ const AddParcelDetails = (props) => {
         height.value,
         isDateSelected,
         comment.value,
-        eChallan
       ),
     );
     // onPressSelectLocation('drop');
@@ -434,129 +210,39 @@ const AddParcelDetails = (props) => {
         {cancelable: false},
       );
       return;
-    } 
-    else if(!isValidAddress(dropAddressData)){
-      Alert.alert(
-        'Alert',
-        'Drop location is missing some details.',
-        [{text: 'Update', onPress: () => openAddAddressScreen(true)}],
-        {cancelable: false},
-      );
-      return;
-    }
-    else {
-      if (pickupAddressData && pickupAddressData.coordinates && sourceData) {
-        checkDistanceBetweenPoints(
-          dropAddressData.coordinates.latitude, 
-          dropAddressData.coordinates.longitude, 
-          destinationData.latitude, 
-          destinationData.longitude,
-          null,
-          false
-        )
-      } else {
-        alert("Something went wrong. Please try again.")
-      }
+    } else {
+      dispatch(
+        setDropLocationDataActions.setDropLocationData(
+          dropAddressData.first_name,
+          dropAddressData.last_name,
+          dropAddressData.email,
+          dropAddressData.phone_number,
+          dropAddressData.flat_name,
+          dropAddressData.area,
+          dropAddressData.city,
+          dropAddressData.state,
+          dropAddressData.country,
+          dropAddressData.pincode,
+          true,
+          true,
+        ),
+      ).then(() => {
+        console.log(`dropLocationData: ${JSON.stringify(dropLocationData)}`)
+        props.navigation.navigate({
+          routeName: 'Checkout',
+          params: {
+            pickupLocationData: pickupLocationData,
+            dropLocationData: dropLocationData,
+            transporterSelectedData: selectedData,
+          },
+        });
+      });
     }
   };
 
-  const openCheckoutScreen = (price, newDistance) => {
-    dispatch(
-      setDropLocationDataActions.setDropLocationData(
-        dropAddressData.coordinates,
-        dropAddressData.first_name,
-        dropAddressData.last_name,
-        dropAddressData.email,
-        dropAddressData.phone_number,
-        dropAddressData.flat_name,
-        dropAddressData.area,
-        dropAddressData.city,
-        dropAddressData.state,
-        dropAddressData.country,
-        dropAddressData.pincode,
-        notifyRecipient,
-        true,
-        sendEndTripOtpToReceiver
-      ),
-    ).then(() => {
-      const loadedDropLocationData = new DropLocationData(
-        dropAddressData.coordinates,
-        dropAddressData.first_name,
-        dropAddressData.last_name,
-        dropAddressData.email,
-        dropAddressData.phone_number,
-        dropAddressData.flat_name,
-        dropAddressData.area,
-        dropAddressData.city,
-        dropAddressData.state,
-        dropAddressData.country,
-        dropAddressData.pincode,
-        notifyRecipient,
-        true,
-        sendEndTripOtpToReceiver
-      );
-      console.log(`dropLocationData: for checkout`, loadedDropLocationData,pickupLocationData)
-      
-      props.navigation.navigate({
-        routeName: 'Checkout',
-        params: {
-          pickupLocationData: pickupLocationData,
-          dropLocationData: loadedDropLocationData,
-          transporterSelectedData: selectedData,
-          price: price,
-          vehicle_type: vehicle_type,
-          newDistance: `${newDistance} km`,
-          distance:newDistance
-        },
-      });
-    });
-  }
-
-  const openAddAddressScreen = (onlyAddressUpdate = false) => {
-    props.navigation.navigate({
-      routeName: 'AddAddressScreen',
-      params: {
-        statusAddAddress: flagPickupPoint ? 'pickup' : 'drop',
-        isEdit: true,
-        isEditFromParcelScreen: true,
-        id: flagPickupPoint ? pickupAddressData.id : dropAddressData.id,
-        name: flagPickupPoint ? pickupAddressData.first_name : dropAddressData.first_name,
-        lastName: flagPickupPoint ? pickupAddressData.last_name : dropAddressData.last_name,
-        email: flagPickupPoint ? pickupAddressData.email : dropAddressData.email,
-        phone: flagPickupPoint ? pickupAddressData.phone_number : dropAddressData.phone_number,
-        flat_name: flagPickupPoint ? pickupAddressData.flat_name : dropAddressData.flat_name,
-        area: flagPickupPoint ? pickupAddressData.area : dropAddressData.area,
-        city: flagPickupPoint ? pickupAddressData.city : dropAddressData.city,
-        state: flagPickupPoint ? pickupAddressData.state : dropAddressData.state,
-        country: flagPickupPoint ? pickupAddressData.country : dropAddressData.country,
-        pincode: flagPickupPoint ? pickupAddressData.pincode : dropAddressData.pincode,
-        coordinate: flagPickupPoint ? pickupAddressData.coordinates : dropAddressData.coordinates,
-        onlyAddressUpdate: onlyAddressUpdate
-      },
-    });
-  }
-
-  const getFormattedAddress = (location) => {
-    return `${location.flat_name ? location.flat_name : ''}${location.area ? ', ' + location.area : ''}${location.city ? ', ' + location.city : ''}${location.state ? ', ' + location.state : ''}${location.pincode ? ', ' + location.pincode : ''}${location.country ? ', ' + location.country : ''}`
-  }
-
-  const isValidAddress = (location) => {
-    if(
-      (location.flat_name && location.flat_name?.length > 0) &&
-      (location.area && location.area?.length > 0) &&
-      (location.city && location.city?.length > 0) &&
-      (location.state && location.state?.length > 0) &&
-      (location.pincode && location.pincode?.length > 0) &&
-      (location.country && location.country?.length >0)
-    ){
-      return true;
-    }
-    return false;
-  }
-
   return (
     <ScrollView style={styles.container}>
-      <SelectParcel data={selectedData.data} price={priceValue} />
+      <SelectParcel data={selectedData.data} />
       <View style={styles.selectDetailView}>
         <TouchableOpacity
           onPress={() => {
@@ -564,7 +250,7 @@ const AddParcelDetails = (props) => {
           }}>
           <Text
             style={flagPickupPoint ? styles.selectText : styles.unSelectText}>
-          Pickup Location
+            Pickup Location
           </Text>
           <View
             style={
@@ -596,15 +282,22 @@ const AddParcelDetails = (props) => {
                   ' ' +
                   pickupAddressData.last_name}
               </Text>
-              <TouchableOpacity onPress={() => {
-                // console.log(`pickupAddressData:`, pickupAddressData)
-                openAddAddressScreen()
-              }}>
+              <TouchableOpacity>
                 <Text style={styles.subTitleText}>Edit</Text>
               </TouchableOpacity>
             </View>
             <Text style={styles.locationText}>
-              {getFormattedAddress(pickupAddressData)}
+              {pickupAddressData.flat_name +
+                ', ' +
+                pickupAddressData.area +
+                ', ' +
+                pickupAddressData.city +
+                ', ' +
+                pickupAddressData.state +
+                ' - ' +
+                pickupAddressData.pincode +
+                '. ' +
+                pickupAddressData.country}
             </Text>
             <Text style={styles.locationText}>
               {pickupAddressData.phone_number}
@@ -617,14 +310,22 @@ const AddParcelDetails = (props) => {
               <Text style={{...styles.titleText, fontSize: RFPercentage(2.2)}}>
                 {dropAddressData.first_name + ' ' + dropAddressData.last_name}
               </Text>
-              <TouchableOpacity onPress={() => {
-                openAddAddressScreen()
-              }}>
+              <TouchableOpacity>
                 <Text style={styles.subTitleText}>Edit</Text>
               </TouchableOpacity>
             </View>
             <Text style={styles.locationText}>
-              {getFormattedAddress(dropAddressData)}
+              {dropAddressData.flat_name +
+                ', ' +
+                dropAddressData.area +
+                ', ' +
+                dropAddressData.city +
+                ', ' +
+                dropAddressData.state +
+                ' - ' +
+                dropAddressData.pincode +
+                '. ' +
+                dropAddressData.country}
             </Text>
             <Text style={styles.locationText}>
               {dropAddressData.phone_number}
@@ -658,12 +359,12 @@ const AddParcelDetails = (props) => {
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            // ref={(ref) => {
-            //   this._sendinginput = ref;
-            // }}
-            // onSubmitEditing={() =>
-            //   this._parcelValueinput && this._parcelValueinput.focus()
-            // }
+            ref={(ref) => {
+              this._sendinginput = ref;
+            }}
+            onSubmitEditing={() =>
+              this._parcelValueinput && this._parcelValueinput.focus()
+            }
             multiline
           />
           <TextInputParcel
@@ -678,17 +379,16 @@ const AddParcelDetails = (props) => {
             autoCompleteType="name"
             textContentType="name"
             keyboardType="number-pad"
-            // ref={(ref) => {
-            //   this._parcelValueinput = ref;
-            // }}
-            // onSubmitEditing={() => this._widthinput && this._widthinput.focus()}
+            ref={(ref) => {
+              this._parcelValueinput = ref;
+            }}
+            onSubmitEditing={() => this._widthinput && this._widthinput.focus()}
           />
           <TextInputParcel
             // style={styles.weightInputText}
             placeholder="Weight(KG)"
             returnKeyType="next"
             value={weight.value}
-            editable={false}
             onChangeText={(text) => setWeight({value: text, error: ''})}
             error={!!weight.error}
             errorText={weight.error}
@@ -696,12 +396,12 @@ const AddParcelDetails = (props) => {
             autoCompleteType="name"
             textContentType="name"
             keyboardType="number-pad"
-            // ref={(ref) => {
-              // this._weightinput = ref;
-            // }}
-            // onSubmitEditing={() =>
-            //   this._dimensioninput && this._dimensioninput.focus()
-            // }
+            ref={(ref) => {
+              this._weightinput = ref;
+            }}
+            onSubmitEditing={() =>
+              this._dimensioninput && this._dimensioninput.focus()
+            }
           />
           <View style={styles.dimentionView}>
             <TextInput
@@ -709,7 +409,6 @@ const AddParcelDetails = (props) => {
               placeholder="123 cm"
               returnKeyType="next"
               value={dimensions.value}
-              editable={false}
               onChangeText={(text) => setDimensions({value: text, error: ''})}
               error={!!dimensions.error}
               errorText={dimensions.error}
@@ -717,12 +416,12 @@ const AddParcelDetails = (props) => {
               autoCompleteType="name"
               textContentType="name"
               keyboardType="number-pad"
-              // ref={(ref) => {
-              //   this._dimensioninput = ref;
-              // }}
-              // onSubmitEditing={() =>
-              //   this._widthinput && this._widthinput.focus()
-              // }
+              ref={(ref) => {
+                this._dimensioninput = ref;
+              }}
+              onSubmitEditing={() =>
+                this._widthinput && this._widthinput.focus()
+              }
             />
             <Text style={{...styles.textKG, color: Colors.subTitleTextColor}}>
               X
@@ -732,7 +431,6 @@ const AddParcelDetails = (props) => {
               placeholder="Width"
               returnKeyType="next"
               value={width.value}
-              editable={false}
               onChangeText={(text) => setWidth({value: text, error: ''})}
               error={!!width.error}
               errorText={width.error}
@@ -740,12 +438,12 @@ const AddParcelDetails = (props) => {
               autoCompleteType="name"
               textContentType="name"
               keyboardType="number-pad"
-              // ref={(ref) => {
-              //   this._widthinput = ref;
-              // }}
-              // onSubmitEditing={() =>
-              //   this._heightinput && this._heightinput.focus()
-              // }
+              ref={(ref) => {
+                this._widthinput = ref;
+              }}
+              onSubmitEditing={() =>
+                this._heightinput && this._heightinput.focus()
+              }
             />
             <Text style={{...styles.textKG, color: Colors.subTitleTextColor}}>
               X
@@ -755,7 +453,6 @@ const AddParcelDetails = (props) => {
               placeholder="Height"
               returnKeyType="next"
               value={height.value}
-              editable={false}
               onChangeText={(text) => setHeight({value: text, error: ''})}
               error={!!height.error}
               errorText={height.error}
@@ -763,13 +460,13 @@ const AddParcelDetails = (props) => {
               autoCompleteType="name"
               textContentType="name"
               keyboardType="number-pad"
-              // ref={(ref) => {
-              //   this._heightinput = ref;
-              // }}
+              ref={(ref) => {
+                this._heightinput = ref;
+              }}
               onSubmitEditing={Keyboard.dismiss}
             />
           </View>
-          {/* <Text style={styles.textPlannedDate}>{isDateSelected}</Text> */}
+          <Text style={styles.textPlannedDate}>{isDateSelected}</Text>
           <TouchableOpacity
             onPress={showDatePicker}
             style={styles.buttonPlannedDate}>
@@ -780,7 +477,7 @@ const AddParcelDetails = (props) => {
               onConfirm={handleConfirm}
               onCancel={hideDatePicker}
               headerTextIOS="Planned Date of Purchase"
-              minimumDate={addMinutes(new Date(), 1)}
+              minimumDate={new Date()}
             />
             <Image
               style={styles.calanderImage}
@@ -799,10 +496,10 @@ const AddParcelDetails = (props) => {
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
-            // // ref={(ref) => {
-            //   this._commentinput = ref;
-            // }}
-            onSubmitEditing={() => {/* this._widtinput && this._weightinput.focus() */}}
+            ref={(ref) => {
+              this._commentinput = ref;
+            }}
+            onSubmitEditing={() => this._widtinput && this._weightinput.focus()}
             multiline
           />
           {/* <PlaceOrderTextInput
@@ -847,32 +544,24 @@ const AddParcelDetails = (props) => {
           <TouchableOpacity
             onPress={() => setPopup(true)}
             style={styles.uploadView}>
-            {resourcePathImage != '' ? <Image
+            <ImageBackground
+              style={styles.placeholderImage}
+              source={require('../../../assets/assets/PlaceOrder/upload.png')}>
+              <Image
                 style={styles.addPhtosImage}
                 // source={{uri: 'data:image/jpeg;base64,' + resourcePath.data}}
                 source={{uri: resourcePathImage.uri}}
-              /> : <Image
-              style={styles.placeholderImage}
-              source={require('../../../assets/assets/PlaceOrder/upload.png')}
-            />}
+              />
+            </ImageBackground>
           </TouchableOpacity>
           <Text style={{...styles.locationText, marginTop: 16}}>
             Add your E-Way challan
           </Text>
-          {!echallanError ? null : (
-        <Text style={styles.errorText}>eChallan can't be empty</Text>
-      )}
         </View>
       )}
       {flagDropPoint && (
         <View style={{margin: 16, marginTop: 0}}>
-          <PlaceOrderTextInput
-            isPickupPoint={false}
-            notifyRecipient={notifyRecipient}
-            sendEndTripOtpToReceiver={sendEndTripOtpToReceiver}
-            setNotifyRecipient={val => setNotifyRecipient(val)}
-            setSendEndTripOtpToReceiver={val => setSendEndTripOtpToReceiver(val)}
-          />
+          <PlaceOrderTextInput isPickupPoint={false} />
         </View>
       )}
       {flagPickupPoint && (
@@ -913,15 +602,12 @@ const AddParcelDetails = (props) => {
                   launchCamera(
                     {
                       mediaType: 'photo',
-                      includeBase64: true,
+                      includeBase64: false,
                       maxHeight: 512,
                       maxWidth: 512,
                     },
                     (response) => {
-                      setPopup(false);
-                      if(!response.didCancel){
                       setResourcePathImage(response);
-                      }
                     },
                   )
                 }>
@@ -933,16 +619,13 @@ const AddParcelDetails = (props) => {
                   launchImageLibrary(
                     {
                       mediaType: 'photo',
-                      includeBase64: true,
+                      includeBase64: false,
                       maxHeight: 512,
                       maxWidth: 512,
                     },
                     (response) => {
                       setPopup(false);
-                      if(!response.didCancel){
                       setResourcePathImage(response);
-                      }
-                      // console.log(`response:`, response)
                     },
                   )
                 }>
@@ -957,7 +640,6 @@ const AddParcelDetails = (props) => {
           </View>
         </View>
       </Modal>
-      <Loader loading={isLoading} />
     </ScrollView>
   );
 };
@@ -1070,8 +752,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addPhtosImage: {
-    height: 98,
-    width: 98,
+    height: 50,
+    width: 50,
   },
   uploadView: {
     marginTop: 16,
@@ -1197,12 +879,6 @@ const styles = StyleSheet.create({
     marginRight: 16,
     height: 30,
     width: 30,
-  },
-  errorText: {
-    paddingTop: 8,
-    fontFamily: 'SofiaPro-Regular',
-    fontSize: RFPercentage(2),
-    color: Colors.errorColor,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,10 @@ import {
   ScrollView,
   Keyboard,
   KeyboardAvoidingView,
+  AsyncStorage,
   Alert,
   Platform,
   PermissionsAndroid,
-  Linking
 } from 'react-native';
 
 // Import the Plugins and Thirdparty library.
@@ -38,33 +38,10 @@ import {
 } from '../../helper/extensions/Validator';
 import Loader from '../../components/design/Loader';
 import AppConstants from '../../helper/constants/AppConstants';
-import StepIndicator from 'react-native-step-indicator';
-import { customStyles, seconds } from '../../helper/Data';
-import {TextInput as Input} from 'react-native-paper';
-import OTPInputView from '@twotalltotems/react-native-otp-input';
-import moment from 'moment';
-import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
-import {
-  flatNameValidator,
-  areaValidator,
-  cityValidator,
-  stateValidator,
-  countryValidator,
-  pinCodeValidator,
-} from '../../helper/extensions/Validator';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import AppPreference from '../../helper/preference/AppPreference';
-import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData';
-import { useDispatch } from 'react-redux';
-import { setIsLoginUser } from '../../navigation/MainNavigation';
-import CheckboxInput from '../../components/design/CheckboxInput';
 
 // Load the main class.
-let stepLabels = ["General\ndetails", "Verification", "Address"];
 
 const RegisterScreen = (props) => {
-  const ref = useRef();
-
   const [name, setName] = useState({value: '', error: ''});
   const [lastName, setLastName] = useState({value: '', error: ''});
   const [email, setEmail] = useState({value: '', error: ''});
@@ -74,137 +51,12 @@ const RegisterScreen = (props) => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentLong, setCurrentLongitude] = useState('unknown');
   const [currentLat, setCurrentLatitude] = useState('unknown');
-  const [currentPosition, setCurrentPosition] = useState(0);
-
-  const [otp, setOtp] = useState({value: '', error: ''});
-  const [isResendNow, setIsResendNow] = useState(false)
-  const [timer, setTimer] = useState(0)
-  const [confirm, setConfirm] = useState(null);
-  const [uID, setUID] = useState(null);
-  const [token, setToken] = useState('');
-  let clockCall = null
-
-  const [flatName, setFlatName] = useState({value: '', error: ''});
-  const [area, setArea] = useState({value: '', error: ''});
-  const [city, setCity] = useState({value: '', error: ''});
-  const [state, setState] = useState({value: '', error: ''});
-  const [country, setCountry] = useState({value: '', error: ''});
-  const [pincode, setPincode] = useState({value: '', error: ''});
-
-  const [termsAndConditionsAgreed, setTermsAndConditionsAgreed] = useState(false);
-
-  const dispatch = useDispatch();
-
+  
   useEffect(() => {
     componentDidMount();
   }, []);
-  
-  const otpRef = useRef(null);
 
-  useEffect(() => {
-    if(currentPosition == 1) setTimeout(() => otpRef.current?.focusField(0), 250);
-  }, [currentPosition]);
-
-  const invalid = ({isDuplicatePhoneNumber, isDuplicateEmailAddress}) => {
-    const errorText = {
-      phone_number_dup: 'User already registered. Please try again with different number.',
-      email_dup: 'Email already registered. Please try again with a different email address.',
-      common: 'Unknown error occurred. Please try again.'
-    }
-    Alert.alert(
-      'Alert',
-      isDuplicatePhoneNumber ? 
-        errorText.phone_number_dup : 
-        isDuplicateEmailAddress ? 
-        errorText.email_dup :
-        errorText.common,
-      [{text: 'OK', onPress: () => console.log('OK Pressed')}],
-      {cancelable: false},
-    );
-  }
-
-  let onlyNumberFieldRegex = '^[0-9]+$';
-  const validateOnlyNumber = text => {
-    let reg = new RegExp(onlyNumberFieldRegex, 'i');
-    if (reg.test(text) === false) {
-      return false;
-    } else {
-      return true;
-    }
-  };
-
-  const decrementClock = asSeconds => {
-    if (asSeconds <= -seconds) {
-      if (clockCall) {
-        clearInterval(clockCall);
-      }
-      setIsResendNow(true)
-    }
-    setTimer(asSeconds)
-  };
-
-  const startTimer = () => {
-    setIsResendNow(false)
-    setTimer(0)
-    let setOpenTime = moment(new Date());
-    clockCall = setInterval(() => {
-      let nowTime = moment(new Date());
-      let asSeconds = Math.round(
-        moment.duration(setOpenTime.diff(nowTime)).asSeconds(),
-      );
-      decrementClock(asSeconds);
-    }, 1000);
-  };
-
-  async function confirmCode() {
-    try {
-      setIsLoading(true)
-      console.log(`otp.value: ${otp.value}`)
-      console.log(`confirm:`, confirm)
-      await confirm.confirm(otp.value)
-      .then(confirmResult => {
-        // console.log(`confirmResult:`, confirmResult)
-        console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
-        setUID(confirmResult.user.uid)
-        confirmResult.user.getIdToken(true).then(token => {
-          setToken(token)
-          setIsLoading(false);
-          setCurrentPosition(currentPosition+1)
-        })
-      })
-      .catch(error => {
-        setIsLoading(false);
-        setOtp({value: otp.value, error: "Invalid Code."})
-        console.log(error)
-      });;
-    } catch (error) {
-      setIsLoading(false);
-      setOtp({value: otp.value, error: "Invalid Code."})
-      console.log('Invalid code.');
-    }
-  }
-
-  async function signInWithPhoneNumber(phoneNumber, isResend) {
-    console.log(`phoneNumber: ${phoneNumber}`)
-    setIsLoading(true);
-    auth()
-      .signInWithPhoneNumber(phoneNumber,isResend)
-      .then(confirmResult => {
-        console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
-        setIsLoading(false);
-        setConfirm(confirmResult)
-        if (!isResend) {
-          setCurrentPosition(currentPosition+1)
-        }
-      })
-      .catch(error => {
-        setIsLoading(false);
-        alert(error.message)
-        console.log(error)
-      });
-  }
-
-  const onPressStep1Next = () => {
+  const onPressRegister = () => {
     const nameError = nameValidator(name.value);
     const lastNameError = lastNameValidator(lastName.value);
     const emailError = emailValidator(email.value);
@@ -217,61 +69,27 @@ const RegisterScreen = (props) => {
     } else if (lastNameError) {
       setLastName({...lastName, error: lastNameError});
       return;
-    }/*  else if (emailError) {
+    } else if (emailError) {
       setEmail({...email, error: emailError});
       return;
-    } */ else if (phoneError) {
+    } else if (phoneError) {
       setPhone({...phone, error: phoneError});
       return;
-    }/*  else if (passwordError) {
+    } else if (passwordError) {
       setPassword({...password, error: passwordError});
       return;
-    } */ else {
-      setIsLoading(true);
-
-      const usersWithMatchingPhoneNumbers = firestore()
-        .collection('users')
-        .where('user_type', 'in', ['Customer', 'customer'])
-        .where('phone_number', '==', phone.value);
-      const usersWithMatchingEmailAddresses = firestore()
-        .collection('users')
-        .where('user_type', 'in', ['Customer', 'customer'])
-        .where('email', '==', email.value);
-      
-      Promise.all([usersWithMatchingPhoneNumbers.get(), usersWithMatchingEmailAddresses.get()])
-      .then(querySnapshots => {
-        const querySnapshot = !querySnapshots[0].empty ? querySnapshots[0] : querySnapshots[1];
-        console.log('Total users: ', querySnapshot.size);
-        if (querySnapshot.size == 0) {
-          setIsLoading(false);
-          startTimer()
-          let phoneNumberWithCode = `${AppConstants.country_code} ${phone.value}`
-          signInWithPhoneNumber(phoneNumberWithCode, false)
-          /* props.navigation.navigate({
-            routeName: 'RegisterAddressScreen',
-            params: {
-              firstName: name.value,
-              lastName: lastName.value,
-              email: email.value,
-              phone: phone.value,
-              // password: password.value,
-              latitude: currentLat,
-              longitude: currentLong,
-            },
-          }); */
-        } else {
-          const data = querySnapshot.docs[0]?.data();
-          const isDuplicatePhoneNumber = data?.phone_number === phone?.value;
-          const isDuplicateEmailAddress = data?.email?.toLowerCase() === email?.value?.toLowerCase();
-
-          setIsLoading(false)
-          setTimeout(() => {
-            invalid({isDuplicatePhoneNumber, isDuplicateEmailAddress})
-          }, 100)
-        }
-      }).catch(error => {
-        setIsLoading(false)
-        console.error(error)
+    } else {
+      props.navigation.navigate({
+        routeName: 'RegisterAddressScreen',
+        params: {
+          firstName: name.value,
+          lastName: lastName.value,
+          email: email.value,
+          phone: phone.value,
+          password: password.value,
+          latitude: currentLat,
+          longitude: currentLong,
+        },
       });
       // setIsLoading(true);
       // auth()
@@ -308,125 +126,6 @@ const RegisterScreen = (props) => {
     }
   };
 
-  const onPressStep2Next = () => {
-    console.log(`otp:`, otp)
-    if (otp.value.length < 6) {
-      setOtp({ value: otp.value, error: "Please enter valid code." })
-      return
-    }
-    confirmCode()
-  }
-
-  const onPressStep3Signup = () => {
-    const flatNameError = flatNameValidator(ref ? ref.current?.getAddressText() : flatName.value);
-    const areaError = areaValidator(area.value);
-    const cityError = cityValidator(city.value);
-    const stateError = stateValidator(state.value);
-    const countryError = countryValidator(country.value);
-    const pincodeError = pinCodeValidator(pincode.value);
-
-    if (flatNameError) {
-      setFlatName({...flatName, error: flatNameError});
-      return;
-    } else if (areaError) {
-      setArea({...area, error: areaError});
-      return;
-    } else if (cityError) {
-      setCity({...city, error: cityError});
-      return;
-    } else if (stateError) {
-      setState({...state, error: stateError});
-      return;
-    } else if (countryError) {
-      setCountry({...country, error: countryError});
-      return;
-    } else if (pincodeError) {
-      setPincode({...pincode, error: pincodeError});
-      return;
-    } else if(!termsAndConditionsAgreed){
-      Alert.alert("","Please accept the Terms and Conditions to proceed");
-      return;
-    } else {
-      setIsLoading(true);
-        
-      let addressData = {}
-      addressData.flat_number = flatName.value
-      addressData.area = area.value
-      addressData.city = city.value
-      addressData.state = state.value
-      addressData.country = country.value
-      addressData.pincode = pincode.value
-      addressData.latitude = currentLat
-      addressData.longitude = currentLong
-
-      let registerData = {
-        // access_token: token,
-        // fcm_token: fcmToken,
-        first_name: name.value,
-        last_name: lastName.value,
-        email: email.value,
-        phone_number: phone.value,
-        country_code: AppConstants.country_code,
-        latitude: currentLat,
-        longitude: currentLong,
-        user_type: 'customer',
-        // device_details: AppConstants.device_details,
-        address: addressData,
-        reason: '',
-        status: true,
-        is_deleted: false,
-        terms_and_conditions_accepted: termsAndConditionsAgreed,
-        created_at: new Date()
-      }
-
-      console.log('token:', token);
-      AsyncStorage.getItem(AppPreference.FCM_TOKEN).then((fcmToken) => {
-        if (fcmToken == null) {
-          setIsLoading(false);
-          console.log(`AppPreference.FCM_TOKEN.null`)
-        } else {
-          console.log(`AppPreference.FCM_TOKEN:`, fcmToken)
-          registerData.fcm_token = fcmToken
-          registerData.access_token = token
-          // console.log(`data:`, data)
-          firestore()
-          .collection('users')
-          .doc(uID)
-          .set(registerData)
-          .then(querySnapshot => {
-            // console.log('Total users: ', querySnapshot.size);
-            setIsLoading(false);
-            AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
-            AsyncStorage.setItem(AppPreference.LOGIN_TOKEN,token);
-            AsyncStorage.setItem(AppPreference.LOGIN_UID, uID).then(
-              () => {
-                console.log(`AsyncStorage.setItem.LOGIN_UID`)
-                AsyncStorage.setItem(
-                  AppPreference.LOGIN_USER_DATA,
-                  JSON.stringify(registerData),
-                ).then(() => {
-                  dispatch({
-                    type: fetchProfileDataActions.FETCH_PROFILE_DATA,
-                    fetchProfileData: registerData,
-                    userUID: uID
-                  });
-
-                  setIsLoginUser(true)
-                  props.navigation.navigate({
-                    routeName: 'Dashboard',
-                  });
-                })
-              },
-            );
-          }).catch(error => {
-            setIsLoading(false);
-            console.error(error)
-          });
-        }
-      });
-    }
-  }
-
   const componentDidMount = () => {
     var that = this;
     if (Platform.OS === 'ios') {
@@ -448,8 +147,8 @@ const RegisterScreen = (props) => {
             alert('Permission Denied');
           }
         } catch (err) {
-          // alert('err', err);
-          console.log(`error:`, err);
+          alert('err', err);
+          console.warn(err);
         }
       }
       requestLocationPermission();
@@ -499,543 +198,19 @@ const RegisterScreen = (props) => {
     Geolocation.clearWatch(this.watchID);
   };
 
-  const step1GeneralDetails = () => {
-    return (
-      <>
-        <View style={{padding: 16}}>
-          <TextInput
-            //   style={styles.nameInputText}
-            label="First Name"
-            returnKeyType="next"
-            value={name.value}
-            onChangeText={(text) => setName({value: text, error: ''})}
-            error={!!name.error}
-            errorText={name.error}
-            autoCapitalize="words"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._nameinput = ref;
-            }}
-            onSubmitEditing={() =>
-              this._lastinput && this._lastinput.focus()
-            }
-          />
-          <TextInput
-            //   style={styles.nameInputText}
-            label="Last Name"
-            returnKeyType="next"
-            value={lastName.value}
-            onChangeText={(text) => setLastName({value: text, error: ''})}
-            error={!!lastName.error}
-            errorText={lastName.error}
-            autoCapitalize="words"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._lastinput = ref;
-            }}
-            onSubmitEditing={() =>
-              this._emailinput && this._emailinput.focus()
-            }
-          />
-          <TextInput
-            //   style={styles.emailInputText}
-            label="Email"
-            returnKeyType="next"
-            value={email.value}
-            onChangeText={(text) => setEmail({value: text, error: ''})}
-            error={!!email.error}
-            errorText={email.error}
-            autoCapitalize="none"
-            autoCompleteType="email"
-            textContentType="emailAddress"
-            keyboardType="email-address"
-            ref={(ref) => {
-              this._emailinput = ref;
-            }}
-            onSubmitEditing={() =>
-              this._phoneinput && this._phoneinput.focus()
-            }
-          />
-          <TextInput
-            //   style={styles.phoneInputText}
-            label="Phone"
-            returnKeyType="next"
-            value={phone.value}
-            onChangeText={(text) => setPhone({value: text, error: ''})}
-            error={!!phone.error}
-            errorText={phone.error}
-            autoCapitalize="none"
-            autoCompleteType="tel"
-            textContentType="telephoneNumber"
-            maxLength={10}
-            keyboardType="phone-pad"
-            ref={(ref) => {
-              this._phoneinput = ref;
-            }}
-            onSubmitEditing={() =>
-              this._addressinput && this._addressinput.focus()
-            }
-            left={<Input.Affix customTextStyle={{ marginRight: 12 }} text={`${AppConstants.country_code} `} />}
-          />
-          {/* <TextInput
-            //   style={styles.nameInputText}
-            label="Address"
-            returnKeyType="next"
-            value={address.value}
-            onChangeText={(text) => setAddress({value: text, error: ''})}
-            error={!!address.error}
-            errorText={address.error}
-            autoCapitalize="none"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._addressinput = ref;
-            }}
-            onSubmitEditing={() =>
-              this._passwordinput && this._passwordinput.focus()
-            }
-            multiline
-          /> */}
-          {/* <TextInput
-            //   style={styles.passwordInputText}
-            label="Password"
-            returnKeyType="done"
-            value={password.value}
-            onChangeText={(text) => setPassword({value: text, error: ''})}
-            error={!!password.error}
-            errorText={password.error}
-            secureTextEntry={true}
-            ref={(ref) => {
-              this._passwordinput = ref;
-            }}
-            onSubmitEditing={Keyboard.dismiss}
-          /> */}
-        </View>
-        <TouchableOpacity style={styles.nextView} onPress={onPressStep1Next}>
-          <Image
-            style={styles.nextImage}
-            source={require('../../assets/assets/SliderScreen/next.png')}
-          />
-        </TouchableOpacity>
-        {/* <TouchableOpacity
-          style={styles.buttonLogin}
-          onPress={onPressRegister}>
-          <Text style={styles.loginText}>SIGN UP</Text>
-        </TouchableOpacity> */}
-        <TouchableOpacity
-          style={styles.registerButton}
-          onPress={() => props.navigation.pop()}>
-          <Text style={styles.haveAnAccountText}>
-            Already have an account?
-          </Text>
-          <Text style={styles.registerText}>Login</Text>
-        </TouchableOpacity>
-      </>
-    )
-  }
-
-  const step2Verification = () => {
-    return (
-      <View style={{padding: 16}}>
-        <Text style={styles.subTitleText}>{"An authentication code has been sent to "}
-          <Text style={{ color: Colors.accentColor }}>
-            {`${AppConstants.country_code} ${phone.value}`}
-          </Text>
-        </Text>
-        <View style={{padding: 16}}>
-          <OTPInputView
-            autoFocusOnLoad={false}
-            ref={otpRef}
-            pinCount={6}
-            style={{height: 64, alignSelf: 'center', width: '94%'}}
-            codeInputFieldStyle={{
-              width: 44,
-              height: 44,
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: Colors.borderColor,
-              color: Colors.textColor,
-              fontSize: 20,
-              // fontFamily: getFontFamily().BOLD,
-            }}
-            codeInputHighlightStyle={{
-              borderColor: Colors.primaryColor,
-              borderWidth: 3,
-            }}
-            onCodeChanged={code => {
-              if (!validateOnlyNumber(code)) {
-                return;
-              }
-              setOtp({value: code, error: ''})
-              /* this.setState({otp: '' + code, errorMessage: ''}, () => {
-                let tIsDisable = true;
-                if (this.state.otp.length == 4) {
-                  tIsDisable = false;
-                }
-                this.setState({isDisable: tIsDisable});
-              }); */
-            }}
-          />
-          {otp.error == '' ? null : (
-            <Text style={styles.errorText}>{otp.error}</Text>
-          )}
-        </View>
-        <TouchableOpacity style={styles.nextView} onPress={onPressStep2Next}>
-          <Image
-            style={styles.nextImage}
-            source={require('../../assets/assets/SliderScreen/next.png')}
-          />
-        </TouchableOpacity>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            marginTop: -16,
-            justifyContent: 'center',
-          }}>
-          {isResendNow ? (
-            <View style={{flexDirection: 'row', justifyContent: 'center'}}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: Colors.subTitleTextColor,
-                  textAlign: 'center',
-                  fontFamily: "SofiaPro-Regular"
-                }}>
-                {"Didn't receive OTP? "}
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  Keyboard.dismiss();
-                  startTimer()
-                  let phoneNumberWithCode = `${AppConstants.country_code} ${phone.value}`
-                  signInWithPhoneNumber(phoneNumberWithCode, true)
-                }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: Colors.primaryColor,
-                    fontFamily: "SofiaPro-Regular"
-                  }}>
-                  {" Resend Code"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={{flexDirection: 'row', justifyContent: 'center'}}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: Colors.subTitleTextColor,
-                  textAlign: 'center',
-                  fontFamily: "SofiaPro-Regular"
-                }}>
-                {"Code sent. Resend code in "}
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: Colors.subTitleTextColor,
-                    fontFamily: "SofiaPro-Regular"
-                  }}>
-                  {timer + seconds}
-                </Text>
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
-    )
-  }
-
-  const onPressAddressItem = (data, details) => {
-    console.log(`data: ${JSON.stringify(data)}`)
-    console.log(`details: ${JSON.stringify(details)}`)
-    var componentList = details.adr_address.split(', ');
-
-    let flatDetails = ''  // ? extended-address
-    let area = ''         // ? street-address
-    let city = ''         // ? locality
-    let state = ''        // ? region
-    let country = ''      // ? country-name
-    let pincode = ''      // ? postal-code
-
-    for (const component of details.address_components) {
-      const componentType = component.types[0];
-  
-      switch (componentType) {
-        case "street_number": {
-          flatDetails = `${component.long_name}`;
-          break;
-        }
-  
-        /* case "route": {
-          flatDetails += component.short_name;
-          break;
-        } */
-
-        case "sublocality_level_2": {
-          flatDetails = flatDetails === '' ? '' : `${flatDetails}, ` + `${component.long_name}`;
-          break;
-        }
-  
-        case "route": {
-          area += component.long_name;
-          break;
-        }
-  
-        case "postal_code_suffix": {
-          pincode = `${pincode}-${component.long_name}`;
-          break;
-        }
-
-        case "locality": {
-          city = component.long_name;
-          break;
-        }
-
-        case "administrative_area_level_1": {
-          state = component.short_name;
-          break;
-        }
-
-        case "country": {
-          country = component.long_name;
-          break;
-        }
-
-        case "postal_code": {
-          pincode = `${component.long_name}${pincode}`;
-          break;
-        }
-      }
-    }
-
-    setFlatName({value: flatDetails, error: ''})
-    setArea({value: area, error: ''})
-    setCity({value: city, error: ''})
-    setState({value: state, error: ''})
-    setCountry({value: country, error: ''})
-    setPincode({value: pincode, error: ''})
-    
-    if (ref) {
-      ref.current?.setAddressText(flatDetails);
-    }
-  }
-
-  const step3AddressView = () => {
-    return (
-      <View>
-        <View style={{padding: 16}}>
-          <ScrollView 
-            horizontal={true}
-            style={{ flex: 1, marginBottom: 8 }}
-            contentContainerStyle={{ flex: 1 }}
-            keyboardShouldPersistTaps='always'
-          >
-            <GooglePlacesAutocomplete
-              ref={ref}
-              placeholder={"Flat name or Number"}
-              minLength={3}
-              returnKeyType={'next'}
-              listViewDisplayed="auto"
-              fetchDetails={true}
-              keyboardShouldPersistTaps='always'
-              // renderDescription={(row) => row.description}
-              onPress={onPressAddressItem}
-              onNotFound={() => {
-                console.log(`onNotFound`)
-              }}
-              query={{
-                key: AppConstants.google_place_api_key,
-                language: 'en',
-                components: 'country:in'
-                // types: '(cities)',
-              }}
-              enablePoweredByContainer={false}
-              /* GooglePlacesDetailsQuery={{
-                // fields: ['formatted_address', 'geometry'],
-                fields: 'geometry',
-              }} */
-              styles={{
-                textInputContainer: {
-                  height: 60,
-                  borderRadius: 4
-                },
-                textInput: {
-                  height: 60,
-                  color: Colors.textColor,
-                  fontSize: RFPercentage(2.4),
-                  // fontFamily: 'SofiaPro-Regular',
-                  backgroundColor: Colors.surfaceColor,
-                  borderRadius: 4,
-                  borderWidth: 1
-                },
-                /* predefinedPlacesDescription: {
-                  color: '#1faadb',
-                } */
-              }}
-            />
-          </ScrollView>
-          {flatName.error == '' ? null : (
-            <Text style={styles.error}>{flatName.error}</Text>
-          )}
-          {/* <TextInput
-            //   style={styles.nameInputText}
-            label="Flat name or Number"
-            returnKeyType="next"
-            value={flatName.value}
-            onChangeText={(text) => setFlatName({value: text, error: ''})}
-            error={!!flatName.error}
-            errorText={flatName.error}
-            autoCapitalize="none"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._flatinput = ref;
-            }}
-            onSubmitEditing={() =>
-              this._areainput && this._areainput.focus()
-            }
-          /> */}
-          <TextInput
-            //   style={styles.nameInputText}
-            label="Area"
-            returnKeyType="next"
-            value={area.value}
-            onChangeText={(text) => setArea({value: text, error: ''})}
-            error={!!area.error}
-            errorText={area.error}
-            autoCapitalize="none"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._areainput = ref;
-            }}
-            onSubmitEditing={() =>
-              this._cityinput && this._cityinput.focus()
-            }
-          />
-          <TextInput
-            //   style={styles.nameInputText}
-            label="City or Town"
-            returnKeyType="next"
-            value={city.value}
-            onChangeText={(text) => setCity({value: text, error: ''})}
-            error={!!city.error}
-            errorText={city.error}
-            autoCapitalize="none"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._cityinput = ref;
-            }}
-            onSubmitEditing={() =>
-              this._stateinput && this._stateinput.focus()
-            }
-          />
-          <TextInput
-            //   style={styles.nameInputText}
-            label="State"
-            returnKeyType="next"
-            value={state.value}
-            onChangeText={(text) => setState({value: text, error: ''})}
-            error={!!state.error}
-            errorText={state.error}
-            autoCapitalize="none"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._stateinput = ref;
-            }}
-            onSubmitEditing={() =>
-              this._countryinput && this._countryinput.focus()
-            }
-          />
-          <TextInput
-            //   style={styles.nameInputText}
-            label="Country"
-            returnKeyType="next"
-            value={country.value}
-            onChangeText={(text) => setCountry({value: text, error: ''})}
-            error={!!country.error}
-            errorText={country.error}
-            autoCapitalize="none"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._countryinput = ref;
-            }}
-            onSubmitEditing={() =>
-              this._pincodeinput && this._pincodeinput.focus()
-            }
-          />
-          <TextInput
-            //   style={styles.nameInputText}
-            label="Pincode"
-            returnKeyType="next"
-            value={pincode.value}
-            onChangeText={(text) => setPincode({value: text, error: ''})}
-            error={!!pincode.error}
-            errorText={pincode.error}
-            autoCapitalize="none"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="number-pad"
-            ref={(ref) => {
-              this._pincodeinput = ref;
-            }}
-            onSubmitEditing={Keyboard.dismiss}
-          />
-          
-          <CheckboxInput
-            label={
-              <View>
-                <Text>I have read and accept the
-                  <Text
-                    onPress={() => {
-                      Linking.openURL(`https://roadferry.in/terms-of-service-customer.html`);
-                    }}
-                    style={styles.tandcText}
-                  > Terms and Conditions</Text>
-                </Text>
-              </View>
-            }
-            checked={termsAndConditionsAgreed}
-            onPress={() => setTermsAndConditionsAgreed(!termsAndConditionsAgreed)}
-          />
-        </View>
-        <TouchableOpacity
-          style={styles.buttonLogin}
-          onPress={onPressStep3Signup}>
-          <Text style={styles.loginText}>SIGN UP</Text>
-        </TouchableOpacity>
-      </View>
-    )
-  }
-
-  const registerView = () => {
-    return (
-      <>
-        <StatusBar
-          backgroundColor={Colors.mainBackgroundColor}
-          barStyle="dark-content"
-        />
-        <SafeAreaView
-          style={{flex: 1, backgroundColor: Colors.mainBackgroundColor}}>
-          <ScrollView 
-            style={styles.container}
-            keyboardShouldPersistTaps='always'
-          >
+  return (
+    <>
+      <StatusBar
+        backgroundColor={Colors.mainBackgroundColor}
+        barStyle="dark-content"
+      />
+      <SafeAreaView
+        style={{flex: 0, backgroundColor: Colors.mainBackgroundColor}}
+      />
+      <SafeAreaView
+        style={{flex: 1, backgroundColor: Colors.mainBackgroundColor}}>
+        <ScrollView style={styles.container}>
+          <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={30}>
             <Loader loading={isLoading} />
             <TouchableOpacity onPress={() => props.navigation.pop()}>
               <Image
@@ -1044,7 +219,7 @@ const RegisterScreen = (props) => {
               />
             </TouchableOpacity>
             <Text style={styles.tilteText}>Sign Up</Text>
-            {/* <View style={styles.lineView}>
+            <View style={styles.lineView}>
               <View style={styles.activeDotView}>
                 <Text style={styles.activeNumberText}>1</Text>
               </View>
@@ -1057,43 +232,143 @@ const RegisterScreen = (props) => {
             <View style={styles.lineViewText}>
               <Text style={styles.registerText}>General details</Text>
               <Text style={styles.haveAnAccountText}>Address</Text>
-            </View> */}
-            <StepIndicator
-              customStyles={customStyles}
-              currentPosition={currentPosition}
-              labels={stepLabels}
-              stepCount={stepLabels.length}
-              renderLabel={({position, stepStatus, label, currentPosition}) => {
-                return (
-                  <Text style={[position == currentPosition ? styles.registerText : styles.haveAnAccountText, {marginTop: 8, textAlign: 'center'}]}>
-                    {stepLabels[position]}
-                  </Text>
-                )
-              }}
-              // onPress={onPageChange}
-            />
-            <View style={{flex: 1}}>
-              {currentPosition == 0 ?
-                step1GeneralDetails() 
-              : currentPosition == 1 ? 
-                step2Verification()
-              : step3AddressView() }
             </View>
-          </ScrollView>
-        </SafeAreaView>
-      </>
-    );
-  }
-
-  return AppConstants.isAndroid ? (
-    <View style={{ flex: 1 }}>{registerView()}</View>
-  ) : (
-    <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: '#fff' }}
-        behavior="padding"
-        enabled>
-        {registerView()}
-    </KeyboardAvoidingView>
+            <View style={{padding: 16}}>
+              <TextInput
+                //   style={styles.nameInputText}
+                label="First Name"
+                returnKeyType="next"
+                value={name.value}
+                onChangeText={(text) => setName({value: text, error: ''})}
+                error={!!name.error}
+                errorText={name.error}
+                autoCapitalize="none"
+                autoCompleteType="name"
+                textContentType="name"
+                keyboardType="default"
+                ref={(ref) => {
+                  this._nameinput = ref;
+                }}
+                onSubmitEditing={() =>
+                  this._lastinput && this._lastinput.focus()
+                }
+              />
+              <TextInput
+                //   style={styles.nameInputText}
+                label="Last Name"
+                returnKeyType="next"
+                value={lastName.value}
+                onChangeText={(text) => setLastName({value: text, error: ''})}
+                error={!!lastName.error}
+                errorText={lastName.error}
+                autoCapitalize="none"
+                autoCompleteType="name"
+                textContentType="name"
+                keyboardType="default"
+                ref={(ref) => {
+                  this._lastinput = ref;
+                }}
+                onSubmitEditing={() =>
+                  this._emailinput && this._emailinput.focus()
+                }
+              />
+              <TextInput
+                //   style={styles.emailInputText}
+                label="Email"
+                returnKeyType="next"
+                value={email.value}
+                onChangeText={(text) => setEmail({value: text, error: ''})}
+                error={!!email.error}
+                errorText={email.error}
+                autoCapitalize="none"
+                autoCompleteType="email"
+                textContentType="emailAddress"
+                keyboardType="email-address"
+                ref={(ref) => {
+                  this._emailinput = ref;
+                }}
+                onSubmitEditing={() =>
+                  this._phoneinput && this._phoneinput.focus()
+                }
+              />
+              <TextInput
+                //   style={styles.phoneInputText}
+                label="Phone"
+                returnKeyType="next"
+                value={phone.value}
+                onChangeText={(text) => setPhone({value: text, error: ''})}
+                error={!!phone.error}
+                errorText={phone.error}
+                autoCapitalize="none"
+                autoCompleteType="tel"
+                textContentType="telephoneNumber"
+                maxLength={10}
+                keyboardType="phone-pad"
+                ref={(ref) => {
+                  this._phoneinput = ref;
+                }}
+                onSubmitEditing={() =>
+                  this._addressinput && this._addressinput.focus()
+                }
+              />
+              {/* <TextInput
+                //   style={styles.nameInputText}
+                label="Address"
+                returnKeyType="next"
+                value={address.value}
+                onChangeText={(text) => setAddress({value: text, error: ''})}
+                error={!!address.error}
+                errorText={address.error}
+                autoCapitalize="none"
+                autoCompleteType="name"
+                textContentType="name"
+                keyboardType="default"
+                ref={(ref) => {
+                  this._addressinput = ref;
+                }}
+                onSubmitEditing={() =>
+                  this._passwordinput && this._passwordinput.focus()
+                }
+                multiline
+              /> */}
+              <TextInput
+                //   style={styles.passwordInputText}
+                label="Password"
+                returnKeyType="done"
+                value={password.value}
+                onChangeText={(text) => setPassword({value: text, error: ''})}
+                error={!!password.error}
+                errorText={password.error}
+                secureTextEntry={true}
+                ref={(ref) => {
+                  this._passwordinput = ref;
+                }}
+                onSubmitEditing={Keyboard.dismiss}
+              />
+            </View>
+            <TouchableOpacity style={styles.nextView} onPress={onPressRegister}>
+              <Image
+                style={styles.nextImage}
+                source={require('../../assets/assets/SliderScreen/next.png')}
+              />
+            </TouchableOpacity>
+            {/* <TouchableOpacity
+              style={styles.buttonLogin}
+              onPress={onPressRegister}>
+              <Text style={styles.loginText}>SIGN UP</Text>
+            </TouchableOpacity> */}
+            <TouchableOpacity
+              style={styles.registerButton}
+              onPress={() => props.navigation.pop()}>
+              <Text style={styles.haveAnAccountText}>
+                Already have an account?
+              </Text>
+              <Text style={styles.registerText}>Login</Text>
+            </TouchableOpacity>
+          </KeyboardAvoidingView>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 };
 
@@ -1125,12 +400,11 @@ const styles = StyleSheet.create({
     fontSize: RFPercentage(4),
     // fontWeight: '500',
     color: Colors.textColor,
-    marginBottom: 30
   },
   subTitleText: {
-    margin: 16,
-    fontFamily: 'SofiaPro-Regular',
-    fontSize: RFPercentage(2.3),
+    marginTop: 8,
+    // fontFamily: 'Roboto-Regular',
+    fontSize: RFPercentage(2),
     color: Colors.titleTextColor,
   },
   headerImage: {
@@ -1267,18 +541,6 @@ const styles = StyleSheet.create({
     width: 150,
     resizeMode: 'contain',
   },
-  errorText: {
-    marginLeft: 8,
-    marginTop: 0,
-    fontFamily: 'SofiaPro-Regular',
-    fontSize: RFPercentage(2),
-    // fontWeight: '500',
-    color: Colors.errorColor,
-    marginRight: 16,
-  },
-  tandcText: {
-    color: '#0000EE'
-  }
 });
 
 export default RegisterScreen;

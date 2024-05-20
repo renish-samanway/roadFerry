@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,10 @@ import {
   TextInput,
   Keyboard,
   Alert,
+  Linking
 } from 'react-native';
-import {RFPercentage} from 'react-native-responsive-fontsize';
-import {useSelector, useDispatch} from 'react-redux';
+import { RFPercentage } from 'react-native-responsive-fontsize';
+import { useSelector, useDispatch } from 'react-redux';
 
 // Import the Plugins and Thirdparty library.
 import ScrollBottomSheet from 'react-native-scroll-bottom-sheet';
@@ -22,8 +23,14 @@ import Modal from 'react-native-modal';
 // Import the JS file.
 
 import Colors from '../../../helper/extensions/Colors';
-import {OrderDetailsOptions} from '../../../helper/extensions/dummyData';
+import { OrderDetailsOptions } from '../../../helper/extensions/dummyData';
 import ParcelOptionsData from '../../../components/Customer/AddParcelDetails/ParcelOptionsData';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import BottomSheetView from '../../../components/design/BottomSheetView';
+import Loader from '../../../components/design/Loader';
+import firestore from '@react-native-firebase/firestore';
+import AppConstants from '../../../helper/constants/AppConstants';
+import MenuView from '../../../components/design/MenuView';
 
 // Load the main class.
 const windowWidth = Dimensions.get('window').width;
@@ -31,21 +38,60 @@ const windowHeight = Dimensions.get('window').height;
 
 const ParcelDetailsScreen = (props) => {
   const selectedHistoryStatus = props.navigation.getParam('historyStatus');
+  const refreshData = props.navigation.getParam('refreshData');
+  const orderData = props.navigation.getParam('selectedOrderData');
+  const orderID = props.navigation.getParam('orderID');
+  // console.log(`ParcelDetailsScreen.parcelData: ${JSON.stringify(parcelData)}`)
+  const user = useSelector(state => state.fetchProfileData.fetchProfileData)
+
+  let userUID = useSelector(
+    (state) => state.fetchProfileData.userUID,
+  );
+  // userUID = "B4Ti8IgLgpsKZECGqOJ0"
+  console.log(`ParcelDetailsScreen.userUID: ${userUID}`)
+
+  useEffect(() => {
+    console.log(`ParcelDetailsScreen.orderID: ${orderID}`)
+    if (orderID) {
+      try {
+        setIsLoading(true)
+        firestore()
+          .collection('order_details')
+          .doc(orderID)
+          .onSnapshot((querySnapshot) => {
+            let tSelectedOrderData = { id: orderID, data: querySnapshot.data() }
+            console.log(`order data: ${JSON.stringify(tSelectedOrderData)}`);
+            setParcelData(tSelectedOrderData)
+            setIsLoading(false)
+          });
+      } catch (err) {
+        console.log(`error: ${error}`)
+        setIsLoading(false)
+      }
+    }
+  }, [orderID]);
+
+  useEffect(() => {
+    console.log(`orderData:`, orderData);
+    if (orderData) {
+      setParcelData(orderData)
+    }
+  }, [orderData])
+
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [flagAccept, setFlagAccept] = useState(false);
   const [flagDriver, setFlagDriver] = useState(true);
   const [flagVehicle, setFlagVehicle] = useState(false);
-  const [search, setSearch] = useState({value: '', error: ''});
+  const [search, setSearch] = useState({ value: '', error: '' });
   const [selectedDriverIndex, setSelectedDriverIndex] = useState('');
   const [selectedVehicleIndex, setSelectedVehicleIndex] = useState('');
   const [popup, setPopup] = useState(false);
+  const [parcelData, setParcelData] = useState(undefined);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const pickupAddressData = useSelector(
-    (state) => state.pickupAddressData.pickupAddressData,
-  );
-  const dropAddressData = useSelector(
+  /* const dropAddressData = useSelector(
     (state) => state.dropAddressData.dropAddressData,
-  );
+  ); */
   const renderDetailsOption = (itemData) => {
     return (
       <TouchableOpacity
@@ -70,108 +116,59 @@ const ParcelDetailsScreen = (props) => {
     );
   };
 
-  const onPressAccept = () => {
+  const driverList = useSelector(
+    (state) => state.transporterDriverData.driverData,
+  );
+
+  const openMaps = (daddr, saddr) => {
+    //22.310971336030473, 73.18372684767557
+    // const daddr = `${latitude},${longitude}`;
+    const company = AppConstants.isIOS ? "apple" : "google";
+    Linking.openURL(`http://maps.${company}.com/maps?daddr=${daddr}&saddr=${saddr}`);
+  }
+
+  const getFormattedAddress = (location) => {
+    return `${location.flat_name +
+      ', ' +
+      location.area +
+      ', ' +
+      location.city +
+      ', ' +
+      location.state +
+      ' - ' +
+      location.pincode +
+      '. ' +
+      location.country}`
+  }
+
+  const showMenuView = () => {
     return (
-      <ScrollBottomSheet // If you are using TS, that'll infer the renderItem `item` type
-        componentType="FlatList"
-        snapPoints={[100, '50%', windowHeight - 300]}
-        initialSnapIndex={2}
-        renderHandle={() => (
-          <View>
-            <View style={styles.header}>
-              <View style={styles.panelHandle} />
-              {/* <Text
-                  style={{
-                    ...styles.vehicleText,
-                    paddingTop: 8,
-                    paddingBottom: 0,
-                  }}>
-                  Choose a traspoter, or swipe up for more
-                </Text> */}
-            </View>
-            <View style={styles.distanceView}>
-              <Text style={styles.distanceText}>Total Distance</Text>
-              <Text style={styles.distanceText}>294 KM</Text>
-            </View>
-          </View>
-        )}
-        data={OrderDetailsOptions}
-        keyExtractor={(i) => i}
-        renderItem={({item}) => (
-          <TouchableOpacity
-            onPress={() => {
-              props.navigation.navigate({
-                routeName: 'AddParcelDetails',
-                params: {
-                  selectedData: item,
-                },
-              });
-            }}>
-            <View style={styles.item}>
-              <Image
-                style={styles.itemImage}
-                source={require('../../../assets/assets/dashboard/parcelImage.jpeg')}
-              />
-              <View>
-                <Text style={styles.traspoterText}>sdsdsd</Text>
-                <Text style={styles.deliveryText}>Delivery time: 3-4 Days</Text>
-              </View>
-              <View style={styles.priceView}>
-                <Text style={styles.priceText}>₹ {2000}</Text>
-              </View>
-            </View>
-            <View style={styles.seperateLine} />
-          </TouchableOpacity>
-        )}
-        contentContainerStyle={styles.contentContainerStyle}
-      />
-    );
-  };
-
-  // On press select driver and vehicle event
-  const onPressSelectDriver_Vehicle = (valueType) => {
-    if (valueType === 'driver') {
-      setFlagDriver(true);
-      setFlagVehicle(false);
-    } else {
-      setFlagDriver(false);
-      setFlagVehicle(true);
-    }
-  };
-
-  const onPressDriverNext = () => {
-    console.log('Driver Index : ', selectedDriverIndex);
-    if (selectedDriverIndex !== '') {
-      setFlagDriver(false);
-      setFlagVehicle(true);
-    } else {
-      Alert.alert(
-        'Alert',
-        'Please select the driver',
-        [{text: 'OK', onPress: () => console.log('OK Pressed')}],
-        {cancelable: false},
-      );
-    }
-  };
-
-  const onPressVehicleAssign = () => {
-    console.log('Driver Index : ', selectedDriverIndex);
-    console.log('Vehicle Index : ', selectedVehicleIndex);
-    if (selectedDriverIndex !== '' && selectedVehicleIndex !== '') {
-      setPopup(true);
-    } else {
-      Alert.alert(
-        'Alert',
-        'Please select the Driver or Vehicle',
-        [{text: 'OK', onPress: () => console.log('OK Pressed')}],
-        {cancelable: false},
-      );
-    }
-  };
+      <View style={{ ...styles.actionButtonRow, justifyContent: 'center' }}>
+        <MenuView
+          navigation={props.navigation}
+          data={parcelData}
+          isAssigned={selectedHistoryStatus == 0 ? true : false}
+          onRefreshList={() => {
+            setIsLoading(false)
+            props.navigation.goBack()
+            // loadOrderHistoryData().then(() => {})
+          }}
+          showLoader={() => {
+            // console.log(`showLoader`)
+            setIsLoading(true)
+          }}
+          hideLoader={() => {
+            // console.log(`hideLoader`)
+            setIsLoading(false)
+          }}
+        />
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>
-      <View>
+      <View style={{ flex: 1 }}>
         <View>
           <FlatList
             horizontal
@@ -181,134 +178,203 @@ const ParcelDetailsScreen = (props) => {
             showsHorizontalScrollIndicator={false}
           />
         </View>
-        <ScrollView style={{margin: 16, marginTop: 0}}>
-          {selectedIndex === 0 && (
+        <ScrollView style={{ margin: 16, marginTop: 0 }}>
+          {selectedIndex === 0 && parcelData && (
             <View>
               <ParcelOptionsData
                 optionTitle="Tracking Id"
-                optionTitleValue="#264100"
+                optionTitleValue={`#${parcelData.data.order_id}`}
               />
               <ParcelOptionsData
                 optionTitle="Items"
-                optionTitleValue="Household Items"
+                optionTitleValue={parcelData.data.pickup_location.sending}
               />
               <ParcelOptionsData
                 optionTitle="Parcel Value"
-                optionTitleValue="120,000"
+                optionTitleValue={parcelData.data.pickup_location.parcel_value}
               />
               <ParcelOptionsData
                 optionTitle="Parcel Weight"
-                optionTitleValue="250 Tons"
+                optionTitleValue={parcelData.data.pickup_location.weight + ' Tons'}
               />
               <ParcelOptionsData
                 optionTitle="Parcel LWH"
-                optionTitleValue="134 feet * 3400 feet * 200 feet"
+                optionTitleValue={
+                  parcelData.data.pickup_location.dimensions +
+                  ' feet * ' +
+                  parcelData.data.pickup_location.width +
+                  ' feet * ' +
+                  parcelData.data.pickup_location.height +
+                  ' feet '
+                }
+                cm
               />
               <ParcelOptionsData
                 optionTitle="Vehicle"
-                optionTitleValue="Mini Truck"
+                optionTitleValue={
+                  parcelData.data.vehicle_type
+                }
               />
+              {(parcelData.data.status!='pending' && parcelData.data.status!='rejected') && parcelData.data.vehicle_details?.vehicle_number != undefined &&
+                <ParcelOptionsData
+                  optionTitle="Vehicle Number"
+                  optionTitleValue={
+                    parcelData.data.vehicle_details.vehicle_number
+                  }
+                />}
               <ParcelOptionsData
                 optionTitle="Pickup Date and Time"
-                optionTitleValue="01/12/2020 12:40 PM"
+                optionTitleValue={parcelData.data.pickup_location.pickup_date_time}
               />
               <ParcelOptionsData
                 optionTitle="Comment"
-                optionTitleValue="Please drive slowly"
+                optionTitleValue={parcelData.data.pickup_location.comment}
               />
+              {(parcelData.data.status!='pending' && parcelData.data.status!='rejected')?
+              <View>
+              {parcelData.data.driver_details?.user_uid != parcelData.data.transporter_uid &&
+                <>
+                  <ParcelOptionsData
+                    optionTitle="Driver Name"
+                    optionTitleValue={parcelData.data.driver_details.first_name + ' ' + parcelData.data.driver_details.last_name}
+                  />
+                  <ParcelOptionsData
+                    optionTitle="Driver Contact Number"
+                    openDialer={true}
+                    optionTitleValue={parcelData.data.driver_details.phone_number}
+                  />
+                </>
+              }
+              </View>
+              :
+              <View>
+              {parcelData.data.created_by?.first_name != undefined &&
+                <>
+                  <ParcelOptionsData
+                    optionTitle="Customer Name"
+                    optionTitleValue={parcelData.data.created_by.first_name + ' ' + parcelData.data.created_by.last_name}
+                  />
+                  <ParcelOptionsData
+                    optionTitle="Customer Contact Number"
+                    openDialer={true}
+                    optionTitleValue={parcelData.data.created_by.phone_number}
+                  />
+                </>
+              }
+              </View>
+              }
             </View>
           )}
-          {selectedIndex === 1 && (
+          {selectedIndex === 1 && parcelData && (
             <View>
               <View>
                 <Text style={styles.locationTitleText}>Pickup Point</Text>
-                <View style={{marginTop: 8}}>
+                <View style={{ marginTop: 8 }}>
                   <View style={styles.locationView}>
                     <Text
                       style={{
                         ...styles.titleText,
                         fontSize: RFPercentage(2.2),
                       }}>
-                      {pickupAddressData.first_name +
+                      {parcelData.data.pickup_location.first_name +
                         ' ' +
-                        pickupAddressData.last_name}
+                        parcelData.data.pickup_location.last_name}
                     </Text>
                   </View>
                   <Text style={styles.locationText}>
-                    {pickupAddressData.flat_name +
-                      ', ' +
-                      pickupAddressData.area +
-                      ', ' +
-                      pickupAddressData.city +
-                      ', ' +
-                      pickupAddressData.state +
-                      ' - ' +
-                      pickupAddressData.pincode +
-                      '. ' +
-                      pickupAddressData.country}
+                    {getFormattedAddress(parcelData.data.pickup_location)}
                   </Text>
                   <Text style={styles.locationText}>
-                    {pickupAddressData.phone_number}
+                    {parcelData.data.pickup_location.phone_number}
                   </Text>
                 </View>
               </View>
-              <View style={{marginTop: 16}}>
+              <View style={{ marginTop: 16 }}>
                 <Text style={styles.locationTitleText}>Drop Point</Text>
-                <View style={{marginTop: 8}}>
+                <View style={{ marginTop: 8 }}>
                   <View style={styles.locationView}>
                     <Text
                       style={{
                         ...styles.titleText,
                         fontSize: RFPercentage(2.2),
                       }}>
-                      {dropAddressData.first_name +
+                      {parcelData.data.drop_location.first_name +
                         ' ' +
-                        dropAddressData.last_name}
+                        parcelData.data.drop_location.last_name}
                     </Text>
                   </View>
                   <Text style={styles.locationText}>
-                    {dropAddressData.flat_name +
-                      ', ' +
-                      dropAddressData.area +
-                      ', ' +
-                      dropAddressData.city +
-                      ', ' +
-                      dropAddressData.state +
-                      ' - ' +
-                      dropAddressData.pincode +
-                      '. ' +
-                      dropAddressData.country}
+                    {getFormattedAddress(parcelData.data.drop_location)}
                   </Text>
                   <Text style={styles.locationText}>
-                    {dropAddressData.phone_number}
+                    {parcelData.data.drop_location.phone_number}
                   </Text>
                 </View>
               </View>
+              {parcelData.data?.distance!=undefined && 
+            <View style={{marginTop: 16}}>
+              <Text style={styles.locationTitleText}>Total Distance</Text>
+              <Text
+                    style={{...styles.titleText, fontSize: RFPercentage(2.2)}}>{parcelData.data.distance} KM</Text>
+              </View>}
             </View>
           )}
-          {selectedIndex === 2 && (
+          {selectedIndex === 2 && parcelData && (
             <View>
               <ParcelOptionsData
                 optionTitle="Payment method"
-                optionTitleValue="Cash on Delivery"
+                optionTitleValue={parcelData.data.payment_mode}
               />
               <ParcelOptionsData
                 optionTitle="Total paid amount"
-                optionTitleValue="₹ 23990"
+                optionTitleValue={`₹ ${parcelData.data.price}`}
               />
             </View>
           )}
         </ScrollView>
       </View>
-      {selectedHistoryStatus === 0 && (
-        <View style={styles.actionButtonRow}>
+      {selectedHistoryStatus === 0 && parcelData && (
+        parcelData.data.status === "pending" ? <View style={styles.actionButtonRow}>
           <TouchableOpacity
             style={styles.cancelView}
-            onPress={() =>
+            onPress={() => {
               props.navigation.navigate({
                 routeName: 'CancelOrderScreen',
+                params: {
+                  orderData: parcelData,
+                  refreshData: () => {
+                    /* if (refreshData) {
+                      refreshData()
+                    } */
+                    props.navigation.goBack()
+                  }
+                }
               })
-            }>
+              /* Alert.alert(
+                'Reject',
+                'Are you sure? you want to reject this order.',
+                [{text: 'YES', onPress: () => {
+                  setIsLoading(true)
+                  firestore()
+                  .collection('order_details')
+                  .doc(parcelData.id)
+                  .update({status: 'rejected'})
+                  .then(()=> {
+                      console.log(`order_details.updated`)
+                      // this.hideLoading()
+                      // this.props.onPressAcceptOrder()
+                      setIsLoading(false)
+                      refreshData()
+                      props.navigation.goBack()
+                  }).catch(error => {
+                      console.log(`order_details.error:`, error)
+                      setIsLoading(false)
+                  })
+                }},
+                {text: 'NO', onPress: () => console.log('OK Pressed')}],
+                {cancelable: false},
+              ); */
+            }}>
             <Text style={styles.cancelText}>Reject</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -316,234 +382,76 @@ const ParcelDetailsScreen = (props) => {
               ...styles.cancelView,
               backgroundColor: Colors.acceptedViewColor,
             }}
-            onPress={() => setFlagAccept(true)}>
+            onPress={() => {
+              console.log(`driverList: ${JSON.stringify(driverList)}`)
+              setFlagAccept(true)
+            }}>
             <Text style={styles.cancelText}>Accept & Assign</Text>
           </TouchableOpacity>
-        </View>
+        </View> :
+          showMenuView()
       )}
-      {selectedHistoryStatus === 1 && (
-        <View style={{...styles.actionButtonRow, justifyContent: 'center'}}>
-          <TouchableOpacity
-            style={{
-              ...styles.cancelView,
-              backgroundColor: Colors.trackOrderViewColor,
-            }}
-            onPress={() =>
-              props.navigation.navigate({
-                routeName: 'CancelOrderScreen',
-              })
-            }>
-            <Text style={styles.cancelText}>Track Order</Text>
-          </TouchableOpacity>
-        </View>
+      {selectedHistoryStatus === 1 && parcelData && (
+        parcelData.data.driver_details.user_uid === userUID ? showMenuView()
+          : <View style={{ ...styles.actionButtonRow, justifyContent: 'center' }}>
+            <TouchableOpacity
+              style={{
+                ...styles.cancelView,
+                backgroundColor: Colors.trackOrderViewColor,
+              }}
+              onPress={() => {
+                // openMaps(`${22.6898},${72.8566}`, `${22.3109},${73.1837}`)
+                console.log(`parcelData.data: ${JSON.stringify(parcelData.data)}`)
+                // openMaps(getFormattedAddress(parcelData.data.drop_location), getFormattedAddress(parcelData.data.pickup_location))
+                props.navigation.navigate({
+                  routeName: 'TrackOrder',
+                  params: {
+                    orderData: parcelData
+                  }
+                })
+              }}>
+              <Text style={styles.cancelText}>Track Order</Text>
+            </TouchableOpacity>
+          </View>
       )}
       {flagAccept && (
-        <ScrollBottomSheet // If you are using TS, that'll infer the renderItem `item` type
-          componentType="FlatList"
-          snapPoints={[100, '50%', windowHeight - 300]}
-          initialSnapIndex={1}
-          renderHandle={() => (
-            <View>
-              <View style={styles.header}>
-                <View style={styles.panelHandle} />
-                <Text style={{...styles.titleText, marginTop: 8}}>
-                  Assign the driver & Vehicle
-                </Text>
-              </View>
-              <View style={styles.selectView}>
-                <TouchableOpacity
-                  onPress={() => onPressSelectDriver_Vehicle('driver')}>
-                  <Text
-                    style={
-                      flagDriver ? styles.selectText : styles.unSelectText
-                    }>
-                    Select Driver
-                  </Text>
-                </TouchableOpacity>
-                <Text
-                  style={{
-                    ...styles.subTitleText,
-                    marginLeft: 16,
-                    marginRight: 16,
-                  }}>
-                  &gt;
-                </Text>
-                <TouchableOpacity
-                  onPress={() => onPressSelectDriver_Vehicle('vehicle')}>
-                  <Text
-                    style={
-                      flagVehicle ? styles.selectText : styles.unSelectText
-                    }>
-                    Select Vehicle
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.trackingView}>
-                <View style={styles.viewInputText}>
-                  <Image
-                    style={styles.trackingImage}
-                    source={
-                      flagDriver
-                        ? require('../../../assets/assets/Transpoter/Dashboard/add_driver.png')
-                        : require('../../../assets/assets/Transpoter/Dashboard/add_vehicle.png')
-                    }
-                  />
-                  <TextInput
-                    style={styles.weightInputText}
-                    placeholder={
-                      flagDriver ? 'Search Driver' : 'Search Vehicle'
-                    }
-                    returnKeyType="done"
-                    value={search.value}
-                    onChangeText={(text) => setSearch(text)}
-                    error={!!search.error}
-                    errorText={search.error}
-                    autoCapitalize="none"
-                    autoCompleteType="name"
-                    textContentType="name"
-                    keyboardType="default"
-                    ref={(ref) => {
-                      this._searchinput = ref;
-                    }}
-                    onSubmitEditing={() => Keyboard.dismiss}
-                  />
-                  <View style={styles.searchView}>
-                    <Image
-                      style={{...styles.trackingImage, marginLeft: 0}}
-                      source={require('../../../assets/assets/dashboard/search.png')}
-                    />
-                  </View>
-                </View>
-              </View>
-              <Text
-                style={{
-                  ...styles.titleText,
-                  marginLeft: 16,
-                  backgroundColor: Colors.backgroundColor,
-                }}>
-                {flagDriver
-                  ? '12 Drivers are available'
-                  : '12 Vehicles are available'}
-              </Text>
-            </View>
-          )}
-          data={OrderDetailsOptions}
-          keyExtractor={(i) => i}
-          renderItem={({item}) => (
-            <View>
-              {flagDriver && (
-                <TouchableOpacity
-                  style={styles.itemRow}
-                  onPress={() => {
-                    setSelectedDriverIndex(item.id);
-                  }}>
-                  <View style={{...styles.itemRow, marginTop: 0}}>
-                    {selectedDriverIndex === item.id ? (
-                      <Image
-                        style={styles.itemImage}
-                        source={require('../../../assets/assets/Transpoter/Dashboard/selected_tick.png')}
-                      />
-                    ) : (
-                      <Image
-                        style={styles.itemImage}
-                        source={require('../../../assets/assets/dashboard/parcelImage.jpeg')}
-                      />
-                    )}
-                    <Text
-                      style={
-                        selectedDriverIndex === item.id
-                          ? styles.selectTitleText
-                          : styles.unSelectTitleText
-                      }>
-                      James Snow
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-              {flagVehicle && (
-                <TouchableOpacity
-                  style={styles.itemRow}
-                  onPress={() => {
-                    setSelectedVehicleIndex(item.id);
-                  }}>
-                  <View style={{...styles.itemRow, marginTop: 0}}>
-                    {selectedVehicleIndex === item.id ? (
-                      <Image
-                        style={styles.itemImage}
-                        source={require('../../../assets/assets/Transpoter/Dashboard/selected_tick.png')}
-                      />
-                    ) : (
-                      <Image
-                        style={styles.itemImage}
-                        source={require('../../../assets/assets/dashboard/heavy_truck.png')}
-                      />
-                    )}
-                    <Text
-                      style={
-                        selectedVehicleIndex === item.id
-                          ? styles.selectTitleText
-                          : styles.unSelectTitleText
-                      }>
-                      Heavy Truck I GJ-DD 407
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-          contentContainerStyle={styles.contentContainerStyle}
+        <BottomSheetView
+          userUID={userUID}
+          parcelData={parcelData}
+          onPressClose={() => setFlagAccept(false)}
+          onPressAcceptOrder={() => {
+            setFlagAccept(false)
+            setPopup(true)
+          }}
         />
-      )}
-      {flagAccept && flagDriver && (
-        <View style={{...styles.actionButtonRow, justifyContent: 'center'}}>
-          <TouchableOpacity
-            style={{
-              ...styles.cancelView,
-              backgroundColor: Colors.primaryColor,
-            }}
-            onPress={() => onPressDriverNext()}>
-            <Text style={styles.cancelText}>Next</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-      {flagAccept && flagVehicle && (
-        <View style={{...styles.actionButtonRow, justifyContent: 'center'}}>
-          <TouchableOpacity
-            style={{
-              ...styles.cancelView,
-              backgroundColor: Colors.acceptedViewColor,
-            }}
-            onPress={() => onPressVehicleAssign()}>
-            <Text style={styles.cancelText}>Accept Order</Text>
-          </TouchableOpacity>
-        </View>
       )}
       {popup && (
         <Modal isVisible={popup}>
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             <View style={styles.centeredView}>
               <View style={styles.popupView}>
                 <Image
                   style={styles.clickImage}
                   source={require('../../../assets/assets/PlaceOrder/checkout_click.png')}
                 />
-                <Text style={{...styles.totalAmountText, textAlign: 'center'}}>
-                  Your order has been successfully assigned.
+                <Text style={{ ...styles.totalAmountText, textAlign: 'center' }}>
+                  Order has been successfully accepted.
                 </Text>
                 <TouchableOpacity
                   style={styles.homeButtonView}
-                  onPress={() =>
-                    props.navigation.navigate({
-                      routeName: 'TranspoterDashboardScreen',
-                    })
-                  }>
-                  <Text style={styles.placeOrderText}>HOME</Text>
+                  onPress={() => {
+                    setPopup(false)
+                    // refreshData()
+                    props.navigation.goBack()
+                  }}>
+                  <Text style={styles.placeOrderText}>OKAY</Text>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
         </Modal>
       )}
+      <Loader loading={isLoading} />
     </View>
   );
 };
@@ -640,7 +548,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.backgroundColor,
-    shadowOffset: {width: 0, height: 5},
+    shadowOffset: { width: 0, height: 5 },
     shadowRadius: 5,
     shadowOpacity: 0.15,
     elevation: 5,
@@ -674,10 +582,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    shadowOffset: {width: 5, height: 0},
+    shadowOffset: { width: 5, height: 0 },
     shadowRadius: 5,
     shadowOpacity: 0.25,
     elevation: 5,
+    flexDirection: 'row'
   },
   panelHandle: {
     width: 35,
@@ -775,6 +684,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     height: 50,
     width: 50,
+  },
+  totalAmountText: {
+    margin: 16,
+    fontFamily: 'SofiaPro-SemiBold',
+    fontSize: RFPercentage(2),
   },
   homeButtonView: {
     margin: 16,

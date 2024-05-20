@@ -17,29 +17,34 @@ import {
 
 // Import the Plugins and Thirdparty library.
 import {RFPercentage, RFValue} from 'react-native-responsive-fontsize';
-// import auth from '@react-native-firebase/auth';
+import auth from '@react-native-firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import firestore from '@react-native-firebase/firestore';
-import auth, {firebase} from '@react-native-firebase/auth';
 // Import the JS file.
+
 import Colors from '../../helper/extensions/Colors';
 import Button from '../../components/design/Button';
 import TextInput from '../../components/design/TextInput';
 import PasswordTextInput from '../../components/design/PasswordTextInput';
 import AppPreference from '../../helper/preference/AppPreference';
-import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData';
 
 import {
   emailValidator,
   passwordValidator,
 } from '../../helper/extensions/Validator';
 import Loader from '../../components/design/Loader';
-import { setIsLoginUser, setLoginUserType } from '../../navigation/MainNavigation';
+import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData';
+import {useDispatch} from 'react-redux';
+import firestore from '@react-native-firebase/firestore';
+import { firebase } from '@react-native-firebase/database';
 import { NavigationActions, StackActions } from 'react-navigation';
 import AppConstants from '../../helper/constants/AppConstants';
-import {useDispatch} from 'react-redux';
 
 // Load the main class.
+const resetDriverDashboardAction = StackActions.reset({
+  index: 0,
+  actions: [NavigationActions.navigate({ routeName: "DriverDashboard" })]
+});
+
 const resetDashboardAction = StackActions.reset({
   index: 0,
   actions: [NavigationActions.navigate({ routeName: "Dashboard" })]
@@ -85,16 +90,6 @@ const LoginScreen_Old = (props) => {
     };
   }, []);
 
-  const onPressSkip = () => {
-    // props.navigation.dispatch(resetDashboardAction)
-    console.log(`onPressSkip`)
-    // props.navigation.pop(2)
-    /* props.navigation.navigate({
-      routeName: 'Dashboard',
-    }); */
-    props.navigation.goBack()
-  }
-
   const onPressLogin = () => {
     const emailError = emailValidator(email.value);
     const passwordError = passwordValidator(password.value);
@@ -110,36 +105,36 @@ const LoginScreen_Old = (props) => {
       auth()
         .fetchSignInMethodsForEmail(email.value)
         .then((result) => {
-          console.log('result', result);
+          // console.log('result', result);
           if (result.toString() === 'password') {
             auth()
               .signInWithEmailAndPassword(email.value, password.value)
               .then((response) => {
-                setIsLoading(false);
+                // setIsLoading(false);
                 // console.log('Email response is : ', response);
-                console.log('rootRef is :', response.user.uid);
-                console.log('firebase.firestore.FieldPath.documentId():', firebase.firestore.FieldPath.documentId());
-
+                // console.log('response.user : ', response.user);
+                // console.log('getUserIDToken():', getUserIDToken());
                 response.user.getIdToken(true).then(token => {
+                  // console.log(`token:`, token)
                   firestore()
-                  .collection('users')
-                  .where('user_type', 'in', ['Customer', 'customer'])
-                  .where(firebase.firestore.FieldPath.documentId(), '==', response.user.uid)
-                  .get()
-                  .then(querySnapshot => {
-                    console.log('Total users: ', querySnapshot.size);
-                    if (querySnapshot.size == 0) {
+                    .collection('users')
+                    .where('user_type', 'in', ['transporter', 'Transporter', 'driver', 'Driver'])
+                    .where(firebase.firestore.FieldPath.documentId(), '==', response.user.uid)
+                    .get()
+                    .then(querySnapshot => {
+                      // console.log('Total users: ', querySnapshot.size);
                       setIsLoading(false);
-                      setTimeout(() => {
-                        invalid()
-                      }, 500)
-                    } else {
-                      querySnapshot.forEach(documentSnapshot => {
-                        console.log('User ID: ', documentSnapshot.id);
-                        // if (documentSnapshot.id == response.user.uid) {
+                      if (querySnapshot.size == 0) {
+                        setTimeout(() => {
+                          invalid()
+                        }, 500)
+                      } else {
+                        querySnapshot.forEach(documentSnapshot => {
+                          console.log('documentSnapshot.id:', documentSnapshot.id);
+                          console.log('user.uid:', response.user.uid);
                           AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
-                          AsyncStorage.setItem(AppPreference.LOGIN_UID,response.user.uid);
-                          AsyncStorage.setItem(AppPreference.LOGIN_TOKEN,token);
+                          AsyncStorage.setItem(AppPreference.LOGIN_UID, response.user.uid);
+                          AsyncStorage.setItem(AppPreference.LOGIN_TOKEN, token);
 
                           AsyncStorage.getItem(AppPreference.FCM_TOKEN).then((fcmToken) => {
                             if (fcmToken == null) {
@@ -158,31 +153,36 @@ const LoginScreen_Old = (props) => {
                               userData.access_token = token
                               userData.fcm_token = fcmToken
                               console.log(`userData:`, userData)
-
                               AsyncStorage.setItem(
                                 AppPreference.LOGIN_USER_DATA,
                                 JSON.stringify(userData),
                               ).then(() => {
-                                setIsLoginUser(true)
                                 dispatch({
                                   type: fetchProfileDataActions.FETCH_PROFILE_DATA,
                                   fetchProfileData: documentSnapshot.data(),
                                   userUID: documentSnapshot.id
                                 });
-                                /* props.navigation.navigate({
-                                  routeName: 'Dashboard',
-                                }); */
-                                props.navigation.goBack()
+                                let userType = documentSnapshot.data().user_type.toLowerCase();
+                                if (userType == 'driver') {
+                                  /* props.navigation.navigate({
+                                    routeName: 'DriverDashboard',
+                                  }); */
+                                  props.navigation.dispatch(resetDriverDashboardAction)
+                                } else {
+                                  /* props.navigation.navigate({
+                                    routeName: 'Dashboard',
+                                  }); */
+                                  props.navigation.dispatch(resetDashboardAction)
+                                }
                               })
                             }
                           });
-                        // }
-                      });
-                    }
-                  }).catch(error => {
-                    setIsLoginUser(true)
-                    console.error(error)
-                  });
+                        });
+                      }
+                    }).catch(error => {
+                      setIsLoginUser(true)
+                      console.error(error)
+                    });
                 }).catch(error => {
                   setIsLoginUser(true)
                   console.log(`error:`, error)
@@ -196,7 +196,7 @@ const LoginScreen_Old = (props) => {
               })
               .catch((error) => {
                 setIsLoading(false);
-                console.log('Error is : ', error.code);
+                console.log('error is : ', error.code);
                 setTimeout(() => {
                   invalid()
                 }, 500)
@@ -216,7 +216,7 @@ const LoginScreen_Old = (props) => {
         })
         .catch((error) => {
           setIsLoading(false);
-          console.log('Error is : ', error.code);
+          console.log('error is : ', error.code);
         });
     }
   };
@@ -233,18 +233,15 @@ const LoginScreen_Old = (props) => {
           barStyle="dark-content"
         />
         <SafeAreaView
+          style={{flex: 0, backgroundColor: Colors.mainBackgroundColor}}
+        />
+        <SafeAreaView
           style={{flex: 1, backgroundColor: Colors.mainBackgroundColor}}>
           <ScrollView style={styles.container}
           keyboardShouldPersistTaps={'handled'}
           automaticallyAdjustContentInsets={false}
           showsVerticalScrollIndicator={false}>
             <Loader loading={isLoading} />
-            {/* <TouchableOpacity onPress={() => props.navigation.pop()}>
-              <Image
-                style={styles.backImage}
-                source={require('../../assets/assets/Authentication/back.png')}
-              />
-            </TouchableOpacity> */}
             <View style={{alignItems: 'center', justifyContent: 'center'}}>
               <Image
                 style={styles.logoImage}
@@ -301,10 +298,7 @@ const LoginScreen_Old = (props) => {
             <TouchableOpacity style={styles.buttonLogin} onPress={onPressLogin}>
               <Text style={styles.loginText}>LOGIN</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.buttonSkip} onPress={onPressSkip}>
-              <Text style={styles.skipText}>SKIP</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.registerButton}
               onPress={() =>
                 props.navigation.navigate({
@@ -315,13 +309,12 @@ const LoginScreen_Old = (props) => {
                 Don't have an account yet?
               </Text>
               <Text style={styles.registerText}>Register</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </ScrollView>
         </SafeAreaView>
       </>
     );
   }
-
   return AppConstants.isAndroid ? (
     <View style={{ flex: 1 }}>{setLoginView()}</View>
   ) : (
@@ -347,11 +340,6 @@ const styles = StyleSheet.create({
     height: 40,
     resizeMode: 'contain',
   },
-  backImage: {
-    marginLeft: 16,
-    height: 40,
-    width: 40,
-  },
   tilteText: {
     margin: 16,
     fontFamily: 'SofiaPro-SemiBold',
@@ -369,7 +357,6 @@ const styles = StyleSheet.create({
   buttonLogin: {
     margin: 64,
     marginTop: 32,
-    marginBottom: 32,
     fontSize: RFPercentage(2),
     backgroundColor: Colors.buttonColor,
     height: 60,
@@ -380,25 +367,10 @@ const styles = StyleSheet.create({
   loginText: {
     fontFamily: 'SofiaPro-Medium',
     color: Colors.backgroundColor,
-    fontSize: RFPercentage(2)
-  },
-  buttonSkip: {
-    margin: 64,
-    marginTop: -16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    height: 60,
-    borderRadius: 30,
-    borderColor: Colors.buttonColor
-  },
-  skipText: {
-    fontFamily: 'SofiaPro-Medium',
-    color: Colors.buttonColor,
     fontSize: RFPercentage(2),
   },
   registerButton: {
-    marginTop: 32,
+    marginTop: -32,
     height: 60,
     alignItems: 'center',
     justifyContent: 'center',

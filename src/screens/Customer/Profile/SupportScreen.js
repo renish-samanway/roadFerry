@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,16 @@ import {
   Keyboard,
   Dimensions,
   Linking,
-} from "react-native";
+} from 'react-native';
 
 // Import the Plugins and Thirdparty library.
-import { RFPercentage } from "react-native-responsive-fontsize";
+import {RFPercentage} from 'react-native-responsive-fontsize';
 
 // Import the JS file.
 
-import Colors from "../../../helper/extensions/Colors";
-import ProfileButton from "../../../components/Customer/Profile/ProfileButton";
-import TextInput from "../../../components/design/TextInput";
+import Colors from '../../../helper/extensions/Colors';
+import ProfileButton from '../../../components/Customer/Profile/ProfileButton';
+import TextInput from '../../../components/design/TextInput';
 import {
   nameValidator,
   emailValidator,
@@ -26,39 +26,23 @@ import {
   commentValidator,
   titleValidator,
   subjectValidator,
-} from "../../../helper/extensions/Validator";
-import Loader from "../../../components/design/Loader";
-import firestore from "@react-native-firebase/firestore";
-import { useSelector } from "react-redux";
-import Modal from "react-native-modal";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import AppPreference from "../../../helper/preference/AppPreference";
+} from '../../../helper/extensions/Validator';
+import Loader from '../../../components/design/Loader';
+import firestore from '@react-native-firebase/firestore';
+import {useSelector} from 'react-redux';
+import Modal from 'react-native-modal';
 // Load the main class.
 
-const windowWidth = Dimensions.get("window").width;
+const windowWidth = Dimensions.get('window').width;
 
 const SupportScreen = (props) => {
   let userUID = useSelector((state) => state.fetchProfileData.userUID);
   // userUID = "B4Ti8IgLgpsKZECGqOJ0"
   console.log(`TranspoterDashboardScreen.userUID: ${userUID}`);
 
-  const checkAndNavigateToLogin = () => {
-    AsyncStorage.getItem(AppPreference.IS_LOGIN).then((valueLogin) => {
-      const isLogin = JSON.parse(valueLogin);
-      console.log("Login Value is : ", isLogin);
-      if (isLogin != 1) {
-        props.navigation.navigate("LoginScreen");
-      }
-    });
-  };
-
-  useEffect(() => {
-    checkAndNavigateToLogin();
-  });
-
-  const [title, setTitle] = useState({ value: "", error: "" });
-  const [subject, setSubject] = useState({ value: "", error: "" });
-  const [comment, setComment] = useState({ value: "", error: "" });
+  const [title, setTitle] = useState({value: '', error: ''});
+  const [subject, setSubject] = useState({value: '', error: ''});
+  const [comment, setComment] = useState({value: '', error: ''});
   const [isLoading, setIsLoading] = useState(false);
   const [popup, setPopup] = useState(false);
 
@@ -68,18 +52,18 @@ const SupportScreen = (props) => {
     const subjectError = subjectValidator(subject.value);
 
     if (titleError) {
-      setTitle({ ...title, error: titleError });
+      setTitle({...title, error: titleError});
       return;
     } else if (subjectError) {
-      setSubject({ ...subject, error: subjectError });
+      setSubject({...subject, error: subjectError});
       return;
     } else if (commentError) {
-      setComment({ ...comment, error: commentError });
+      setComment({...comment, error: commentError});
       return;
     } else {
       setIsLoading(true);
       firestore()
-        .collection("contact_details")
+        .collection('contact_details')
         .add({
           title: title.value,
           subject: subject.value,
@@ -99,12 +83,12 @@ const SupportScreen = (props) => {
 
   return (
     <View style={styles.container}>
-      <View style={{ padding: 16 }}>
+      <View style={{padding: 16}}>
         <TextInput
           label="Title"
           returnKeyType="next"
           value={title.value}
-          onChangeText={(text) => setTitle({ value: text, error: "" })}
+          onChangeText={(text) => setTitle({value: text, error: ''})}
           error={!!title.error}
           errorText={title.error}
           autoCapitalize="none"
@@ -117,13 +101,12 @@ const SupportScreen = (props) => {
           onSubmitEditing={() =>
             this._subjectinput && this._subjectinput.focus()
           }
-          multiline
         />
         <TextInput
           label="Subject"
           returnKeyType="next"
           value={subject.value}
-          onChangeText={(text) => setSubject({ value: text, error: "" })}
+          onChangeText={(text) => setSubject({value: text, error: ''})}
           error={!!subject.error}
           errorText={subject.error}
           autoCapitalize="none"
@@ -134,13 +117,12 @@ const SupportScreen = (props) => {
             this._subjectinput = ref;
           }}
           onSubmitEditing={() => this._writeinput && this._writeinput.focus()}
-          multiline
         />
         <TextInput
           label="Write here"
           returnKeyType="next"
           value={comment.value}
-          onChangeText={(text) => setComment({ value: text, error: "" })}
+          onChangeText={(text) => setComment({value: text, error: ''})}
           error={!!comment.error}
           errorText={comment.error}
           autoCapitalize="none"
@@ -150,66 +132,50 @@ const SupportScreen = (props) => {
           ref={(ref) => {
             this._writeinput = ref;
           }}
-          onSubmitEditing={Keyboard.dismiss}
+          // onSubmitEditing={Keyboard.dismiss}
+          maxHeight={100}
           multiline
         />
       </View>
       <TouchableOpacity
         style={styles.supportView}
-        onPress={() => onPressSubmit()}
-      >
+        onPress={() => onPressSubmit()}>
         <Text style={styles.supportText}>SEND</Text>
       </TouchableOpacity>
 
       <Text style={styles.orText}>OR</Text>
       <View style={styles.contactDetailMainView}>
         <Text style={styles.contactTitleText}>
-          Have more queries contact us{" "}
+          Have more queries contact us{' '}
         </Text>
-        <Text style={styles.contactValueTextContainer}>
-          <TouchableOpacity
-            onPress={() => {
-              Linking.openURL(`tel:+91${9925957045}`);
-            }}
-          >
-            <Text style={styles.contactValueText}>9925957045</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Text style={[styles.contactValueText, {textDecorationLine: "none"}]}> (or) </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              Linking.openURL(`mailto:support@roadferry.in`);
-            }}
-          >
-            <Text style={styles.contactValueText}>support@roadferry.in</Text>
-          </TouchableOpacity>
-        </Text>
+        <TouchableOpacity
+          onPress={() => {
+            Linking.openURL(`tel:+91${9876543210}`);
+          }}>
+          <Text style={styles.contactValueText}>9876543210</Text>
+        </TouchableOpacity>
       </View>
 
       {popup && (
         <Modal isVisible={popup}>
-          <View style={{ flex: 1 }}>
+          <View style={{flex: 1}}>
             <View style={styles.centeredView}>
               <View style={styles.popupView}>
                 <Image
                   style={styles.clickImage}
-                  source={require("../../../assets/assets/PlaceOrder/checkout_click.png")}
+                  source={require('../../../assets/assets/PlaceOrder/checkout_click.png')}
                 />
-                <Text
-                  style={{ ...styles.totalAmountText, textAlign: "center" }}
-                >
+                <Text style={{...styles.totalAmountText, textAlign: 'center'}}>
                   Thank you, Your submission has been sent.
                 </Text>
                 <TouchableOpacity
                   style={styles.okayButtonView}
                   onPress={() => {
-                    setTitle({ value: "", error: "" });
-                    setSubject({ value: "", error: "" });
-                    setComment({ value: "", error: "" });
+                    setTitle({value: '', error: ''});
+                    setSubject({value: '', error: ''});
+                    setComment({value: '', error: ''});
                     setPopup(false);
-                  }}
-                >
+                  }}>
                   <Text style={styles.placeOrderText}>OKAY</Text>
                 </TouchableOpacity>
               </View>
@@ -225,7 +191,7 @@ const SupportScreen = (props) => {
 SupportScreen.navigationOptions = (navigationData) => {
   return {
     headerShown: true,
-    headerTitle: "Contact Us",
+    headerTitle: 'Contact Us',
     headerStyle: {
       elevation: 0,
       shadowOpacity: 0,
@@ -237,11 +203,10 @@ SupportScreen.navigationOptions = (navigationData) => {
         <TouchableOpacity
           onPress={() => {
             navigationData.navigation.toggleDrawer();
-          }}
-        >
+          }}>
           <Image
             style={styles.menuImage}
-            source={require("../../../assets/assets/dashboard/ic_menu.png")}
+            source={require('../../../assets/assets/dashboard/ic_menu.png')}
           />
         </TouchableOpacity>
       </View>
@@ -269,28 +234,28 @@ const styles = StyleSheet.create({
     marginRight: 64,
     marginBottom: 38,
     fontSize: RFPercentage(2),
-    fontFamily: "SofiaPro-Medium",
+    fontFamily: 'SofiaPro-Medium',
     backgroundColor: Colors.buttonColor,
     height: 60,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 30,
   },
   supportText: {
-    fontFamily: "SofiaPro-Medium",
+    fontFamily: 'SofiaPro-Medium',
     color: Colors.backgroundColor,
     fontSize: RFPercentage(2),
   },
   centeredView: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   popupView: {
     backgroundColor: Colors.backgroundColor,
     // height: 200,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     width: windowWidth - 64,
     borderRadius: 10,
   },
@@ -301,7 +266,7 @@ const styles = StyleSheet.create({
   },
   totalAmountText: {
     margin: 16,
-    fontFamily: "SofiaPro-SemiBold",
+    fontFamily: 'SofiaPro-SemiBold',
     fontSize: RFPercentage(2),
   },
   okayButtonView: {
@@ -310,41 +275,38 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.buttonColor,
     width: 150,
     height: 40,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 10,
   },
   placeOrderText: {
     color: Colors.backgroundColor,
-    fontFamily: "SofiaPro-SemiBold",
+    fontFamily: 'SofiaPro-SemiBold',
     fontSize: RFPercentage(2),
   },
   contactDetailMainView: {
     marginTop: 30,
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   orText: {
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: RFPercentage(3),
     color: Colors.titleTextColor,
-    fontFamily: "SofiaPro-Regular",
+    fontFamily: 'SofiaPro-Regular',
   },
   contactTitleText: {
     fontSize: RFPercentage(2),
     color: Colors.titleTextColor,
-    fontFamily: "SofiaPro-Regular",
-  },
-  contactValueTextContainer: {
-    marginTop:8
+    fontFamily: 'SofiaPro-Regular',
   },
   contactValueText: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
     fontSize: RFPercentage(2),
     color: Colors.titleTextColor,
-    fontFamily: "SofiaPro-Regular",
-    textDecorationLine: "underline",
+    fontFamily: 'SofiaPro-Regular',
+    textDecorationLine: 'underline',
   },
 });
 

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   ImageBackground,
+  Keyboard,
 } from 'react-native';
 
 // Import the Plugins and Thirdparty library.
@@ -21,10 +22,10 @@ const windowWidth = Dimensions.get('window').width;
 const UploadImage = (props) => {
   const [popup, setPopup] = useState(false);
   const [resourcePathImage, setResourcePathImage] = useState('');
-  const {titleName, titleShow, errorMessage, imageType, saveImageData, data, isEdit, isVerified, isVehicle} = props;  //imageType => 1 for Address Proof, 2 for Identity Proof, 3 for Driver Photo
+  const {titleName, titleShow, errorMessage, imageType, saveImageData, data, isEdit, isVerified, isVehicle,isRow=false} = props;  //imageType => 1 for Address Proof, 2 for Identity Proof, 3 for Driver Photo
   // console.log(`imageType:`, imageType)
   // console.log(`isEdit:`, isEdit)
-  // console.log(`data:`, data)
+  console.log(`data:`, data)
   // console.log(`resourcePathImage:`, resourcePathImage)
   // console.log(`isVehicle:`, isVehicle)
   /* if (isVehicle == undefined) {
@@ -46,16 +47,18 @@ const UploadImage = (props) => {
 
   return (
     <View>
+    {!isRow &&
       <Text
         style={
           titleShow
             ? {...styles.tilteText, color: Colors.mainBackgroundColor}
             : styles.tilteText
         }>
-        {titleName}
-      </Text>
+        {isVehicle ? "" : titleName}
+      </Text>}
       <TouchableOpacity
         onPress={() => {
+          Keyboard.dismiss()
           if ((!isVerified || imageType == 3) && !isVehicle) {
             setPopup(true)
           }
@@ -66,7 +69,7 @@ const UploadImage = (props) => {
             style={styles.placeholderImage}
             source={require('../../../assets/assets/PlaceOrder/upload.png')}
           />
-         : 
+        : 
           <Image
             style={styles.addPhotosImage}
             // source={{uri: 'data:image/jpeg;base64,' + resourcePath.data}}
@@ -107,7 +110,7 @@ const UploadImage = (props) => {
                       mediaType: 'photo',
                       includeBase64: true,
                       maxHeight: 512,
-                      maxWidth: 200,
+                      maxWidth: 512,
                     },
                     (response) => {
                       setPopup(false);

@@ -8,7 +8,7 @@ import {RFPercentage, RFValue} from 'react-native-responsive-fontsize';
 import Colors from '../../../helper/extensions/Colors';
 
 const SelectParcel = (props) => {
-  const {data, parcelHistory, transporterData, price } = props;
+  const {data, parcelHistory, transporterData, isTransporter} = props;
 
   return (
     <View style={{backgroundColor: Colors.backgroundColor}}>
@@ -19,13 +19,13 @@ const SelectParcel = (props) => {
         />
         <View style={{ justifyContent: 'center' }}>
           <Text style={styles.traspoterText}>
-          {data ? data.first_name : transporterData.first_name}{' '}{data ? data.last_name : transporterData.last_name}
+            {data && data.first_name != null ? `${data.first_name} ${data.last_name}` : '[first_name] [last_name]'}
           </Text>
-          {/* <Text style={styles.deliveryText}>Delivery time: 3-4 Days</Text> */}
+          {isTransporter ? null : <Text style={styles.deliveryText}>Delivery time: 3-4 Days</Text>}
         </View>
         {!parcelHistory && (
           <View style={styles.priceView}>
-            <Text style={styles.priceText}>₹ {price}</Text>
+            <Text style={styles.priceText}>₹ {2000}</Text>
           </View>
         )}
       </View>

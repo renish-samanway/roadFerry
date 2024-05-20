@@ -15,44 +15,108 @@ import {RFPercentage, RFValue} from 'react-native-responsive-fontsize';
 import Colors from '../../../helper/extensions/Colors';
 import SelectParcel from '../../../components/Customer/AddParcelDetails/SelectParcel';
 const windowWidth = Dimensions.get('window').width;
+import Menu, {MenuItem, MenuDivider} from 'react-native-material-menu';
+import MenuView from '../../design/MenuView';
 
 const RecentOrder = (props) => {
+  const { data: parcelData, navigation, isDriverRecentOrder, isDriverDetail } = props;
+  // console.log(`data: ${JSON.stringify(data)}`)
+  const openParcelDetailsScreen = (data) => {
+    navigation.navigate({
+      routeName: isDriverDetail ? 'DriverDetailScreen' : 'ParcelDetailsScreen',
+      params: {
+        historyStatus: 0,
+        selectedOrderData: data,
+      },
+    })
+  }
+  if (parcelData == undefined) {
+    return (null)
+  }
   return (
     <TouchableOpacity
       style={styles.historyView}
-      onPress={() =>
-        props.navigation.navigate({
-          routeName: 'OrderDetailsScreen',
-        })
-      }>
+      onPress={() => {
+        openParcelDetailsScreen(parcelData)
+      }}>
       <View style={styles.itemRow}>
-        <Text style={styles.unSelectedStatusText}>#264100</Text>
-        <Text style={styles.titleText}>₹ {2000}</Text>
+        <Text style={styles.unSelectedStatusText}>#{parcelData.data.order_id}</Text>
+        <Text style={styles.titleText}>₹ {parcelData.data.price}</Text>
       </View>
       <View style={styles.textView}>
         <Text style={styles.titleText} numberOfLines={1}>
-          Ahmedabad
+          {parcelData.data.pickup_location.city}
         </Text>
         <Text style={styles.subTitleText}>-- to --</Text>
         <Text style={styles.titleText} numberOfLines={1}>
-          Vadodara
+          {parcelData.data.drop_location.city}
         </Text>
       </View>
-      <SelectParcel parcelHistory={true} />
-      <View style={styles.itemRow}>
-        <TouchableOpacity style={styles.detailView}>
-          <Text style={styles.detailText}>View Details</Text>
+      <SelectParcel isTransporter={true} parcelHistory={true} data={parcelData.data.drop_location} />
+      {/* {isDriverRecentOrder ? 
+        <>
+          <View style={styles.seperateLine} />
+            <View style={{margin: 8}}>
+              <Text style={styles.subTitleText}>Customer Details</Text>
+              <Text style={{...styles.titleText, marginTop: 4}}>
+                Michael Wayans
+              </Text>
+              <Text style={{...styles.subTitleText, marginTop: 4}}>
+                Contact number
+              </Text>
+              <Text style={{...styles.titleText, marginTop: 4}}>
+                +91 99844 38573
+              </Text>
+            </View>
+          <View style={styles.seperateLine} />
+        </>
+       : null} */}
+      {!isDriverRecentOrder ? <View style={styles.itemRow}>
+        <TouchableOpacity 
+          style={styles.detailView}
+          onPress={() => {
+            openParcelDetailsScreen(parcelData)
+          }}>
+          <Text style={styles.detailText}>Details</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.acceptView}
           onPress={() =>
-            props.navigation.navigate({
-              routeName: 'CancelOrderScreen',
-            })
+            props.onPressAccept()
           }>
           <Text style={styles.acceptText}>Accept</Text>
         </TouchableOpacity>
       </View>
+      : <View style={styles.itemRow}>
+      <TouchableOpacity 
+        style={styles.detailView}
+        onPress={() => {
+          openParcelDetailsScreen(parcelData)
+        }}>
+        <Text style={styles.detailText}>Details</Text>
+      </TouchableOpacity>
+      {isDriverRecentOrder ? 
+        <MenuView
+          navigation={props.navigation}
+          data={parcelData} 
+          isAssigned={true} 
+          onRefreshList={() => {
+            // consolesetIsLoading(false)
+            if (props.onStatusChange) {
+              props.onStatusChange()
+            }
+          }}
+          showLoader={() => {
+            // console.log(`showLoader`)
+            //setIsLoading(true)
+          }}
+          hideLoader={() => {
+            // console.log(`hideLoader`)
+            //setIsLoading(false)
+          }}
+        /> : null
+      }
+    </View> }
     </TouchableOpacity>
   );
 };
@@ -61,7 +125,6 @@ const styles = StyleSheet.create({
   historyView: {
     // flex: 1,
     margin: 16,
-    marginBottom: 0,
     backgroundColor: Colors.backgroundColor,
     borderRadius: 10,
     shadowOffset: {width: 0, height: 5},
@@ -141,6 +204,40 @@ const styles = StyleSheet.create({
     color: Colors.primaryColor,
     fontSize: RFPercentage(1.8),
     fontFamily: 'SofiaPro-Regular',
+  },
+  optionView: {
+    margin: 16,
+    marginTop: 0,
+    width: windowWidth / 2 - 64,
+    height: 40,
+    borderRadius: 20,
+    borderColor: Colors.titleTextColor,
+    borderWidth: 0.5,
+    flexDirection: 'row',
+    // backgroundColor: Colors.acceptedViewColor,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionText: {
+    fontSize: RFPercentage(1.8),
+    fontFamily: 'SofiaPro-Regular',
+    color: Colors.titleTextColor,
+  },
+  optionImage: {
+    height: 30,
+    width: 30,
+  },
+  seperateLine: {
+    backgroundColor: Colors.subViewBGColor,
+    height: 1,
+  },
+  menuItemText: {
+    textAlign: 'center', 
+    fontSize: RFPercentage(2), 
+    fontFamily: 'SofiaPro-Regular'
+  },
+  menuItemView: {
+    backgroundColor: Colors.mainBackgroundColor
   },
 });
 

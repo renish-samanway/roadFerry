@@ -4,6 +4,7 @@ import {TextInput as Input} from 'react-native-paper';
 // import {theme} from '../core/theme';
 import Colors from '../../helper/extensions/Colors';
 import {RFPercentage, RFValue} from 'react-native-responsive-fontsize';
+import AppConstants from '../../helper/constants/AppConstants';
 
 const TextInput = ({errorText, customRef, ...props}) => {
   /* console.log(`TextInput`)

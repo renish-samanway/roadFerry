@@ -1,6 +1,6 @@
 export const SET_DESTINATION_ADDRESS_VALUE = 'SET_DESTINATION_ADDRESS_VALUE';
 
-export const setDestinationAddressValue = (textValue, latitude, longitude, allDetails) => {
+export const setDestinationAddressValue = (textValue, latitude, longitude) => {
   return async (dispatch) => {
     // any async code you want!
     try {
@@ -13,7 +13,6 @@ export const setDestinationAddressValue = (textValue, latitude, longitude, allDe
         setDestinationTextValue: destinationValue,
         setDestinationLatitude: destinationLatitude,
         setDestinationLongitude: destinationLongitude,
-        destinationAllData: allDetails
       });
     } catch (err) {
       // send to custom analytics server

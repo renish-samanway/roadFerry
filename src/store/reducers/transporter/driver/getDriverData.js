@@ -1,4 +1,4 @@
-import {GET_DRIVER_LIST, IS_LOADING} from '../../../actions/transporter/driver/getDriverData';
+import {GET_DRIVER_LIST, IS_DRIVER_LOADING} from '../../../actions/transporter/driver/getDriverData';
 
 const initialState = {
   driverData: [],
@@ -12,7 +12,7 @@ export default (state = initialState, action) => {
         driverData: action.driverData,
         isLoading: action.isLoading
       };
-    case IS_LOADING:
+    case IS_DRIVER_LOADING:
       return {
         isLoading: action.isLoading
       }

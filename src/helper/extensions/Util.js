@@ -1,6 +1,6 @@
 import {Platform, StatusBar, Dimensions} from 'react-native';
 
-export const {height, width} = Dimensions.get('window');
+const {height, width} = Dimensions.get('window');
 
 const standardLength = width > height ? width : height;
 const offset =
@@ -28,14 +28,4 @@ export function RFPercentage(percent) {
 export function WidthPercentage(percent) {
   const widthPercent = (percent * width) / 100;
   return Math.round(widthPercent);
-}
-
-
-export function generateOrderId(length = 14) {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let orderId = '';
-  for (let i = 0; i < length; i++) {
-      orderId += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return `order_${orderId}`;
 }

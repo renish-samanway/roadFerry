@@ -20,35 +20,11 @@ import {OrderHistroyData} from '../../../helper/extensions/dummyData';
 import SelectParcel from '../../../components/Customer/AddParcelDetails/SelectParcel';
 import * as getOrderHistoryDataActions from '../../../store/actions/customer/orderHistory/getOrderHistoryData';
 import AppPreference from '../../../helper/preference/AppPreference';
-import EmptyData from '../../../components/design/EmptyData';
-import Loader from '../../../components/design/Loader';
-// import { NavigationActions, StackActions } from 'react-navigation';
 
 // Load the main class.
 const windowWidth = Dimensions.get('window').width;
-/* const resetAuthAction = StackActions.reset({
-  index: 0,
-  actions: [NavigationActions.navigate({ routeName: "LoginScreen" })]
-}); */
 
 const OrderHistoryScreen = (props) => {
-  // let isShowBack = props.navigation.getParam('isShowBack');
-  // console.log(`isShowBack:`, isShowBack)
-
-  let userUID = useSelector(
-    (state) => state.fetchProfileData.userUID,
-  );
-  // console.log(`OrderHistoryScreen.userUID: ${userUID}`)
-  const checkAndNavigateToLogin = () => {
-    AsyncStorage.getItem(AppPreference.IS_LOGIN).then((valueLogin) => {
-      const isLogin = JSON.parse(valueLogin);
-      console.log('Login Value is : ', isLogin);
-      if (isLogin != 1) {
-        props.navigation.navigate('LoginScreen')
-      }
-    });
-  }
-
   const [pendingFlag, setPendingFlag] = useState(true);
   const [onGoingFlag, setOnGoingFlag] = useState(false);
   const [completedFlag, setCompletedFlag] = useState(false);
@@ -63,30 +39,29 @@ const OrderHistoryScreen = (props) => {
     (state) => state.customerCompletedOrderData.customerCompletedOrderData,
   );
 
-  const orderDataLoading = useSelector(
-    (state) => state.customerPendingOrderData.isLoading,
-  );
-
   const dispatch = useDispatch();
+
   const loadOrderHistoryData = useCallback(async () => {
-    checkAndNavigateToLogin()
-    try {
-      dispatch(getOrderHistoryDataActions.getCustomerOrderData(userUID));
-    } catch (err) {
-      console.log('Error is : ', err);
-      // Alert.alert(
-      //   'Alert',
-      //   err.message.replace(/[[&\/\\#,+()$~%.'":*?<>{}]/g, ''),
-      //   [
-      //     {
-      //       text: 'OK',
-      //       onPress: () => console.log('Cickeed!'),
-      //     },
-      //   ],
-      //   {cancelable: false},
-      // );
-    }
-  }, [dispatch, userUID]);
+    AsyncStorage.getItem(AppPreference.LOGIN_UID).then((valueUID) => {
+      console.log('UID IS : ', valueUID);
+      try {
+        dispatch(getOrderHistoryDataActions.getCustomerOrderData(valueUID));
+      } catch (err) {
+        console.log('Error is : ', err);
+        // Alert.alert(
+        //   'Alert',
+        //   err.message.replace(/[[&\/\\#,+()$~%.'":*?<>{}]/g, ''),
+        //   [
+        //     {
+        //       text: 'OK',
+        //       onPress: () => console.log('Cickeed!'),
+        //     },
+        //   ],
+        //   {cancelable: false},
+        // );
+      }
+    });
+  }, [dispatch]);
 
   useEffect(() => {
     const willFocusSub = props.navigation.addListener(
@@ -111,7 +86,6 @@ const OrderHistoryScreen = (props) => {
   // }, [dispatch]);
 
   const renderPendingHistroyData = (itemData) => {
-    console.log(`itemData.item:`, itemData.item)
     return (
       <TouchableOpacity
         style={styles.historyView}
@@ -140,46 +114,26 @@ const OrderHistoryScreen = (props) => {
         </View>
         <SelectParcel
           parcelHistory={true}
-          transporterData={itemData.item.data.transporter_details}
+          data={itemData.item.data.transporter_details}
         />
         <View style={styles.itemRow}>
           <TouchableOpacity
             style={styles.detailView}
             onPress={() =>
-              itemData?.item?.data?.transporter_uid
-              ?
-                props.navigation.navigate({
-                  routeName: 'OrderDetailsScreen',
-                  params: {
-                    selectedOrderData: itemData.item,
-                  },
-                })
-              :
-                props.navigation.navigate({
-                  routeName: 'DashboardScreen',
-                  params: {
-                    selectedOrderData: itemData.item?.data,
-                    selectedOrderDataId: itemData.item?.id,
-                    assignTransporterMode: true
-                  },
-                })
+              props.navigation.navigate({
+                routeName: 'OrderDetailsScreen',
+                params: {
+                  selectedOrderData: itemData.item,
+                },
+              })
             }>
-            <Text style={styles.detailText}>
-              {itemData?.item?.data?.transporter_uid ? 'Details' : 'Assign Transporter'}
-            </Text>
+            <Text style={styles.detailText}>Details</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.cancelView}
             onPress={() =>
               props.navigation.navigate({
                 routeName: 'CancelOrderScreen',
-                params: {
-                  orderData: itemData.item,
-                  refreshData: () => {
-                    loadOrderHistoryData().then(() => {
-                    });
-                  }
-                }
               })
             }>
             <Text style={styles.cancelText}>Cancel</Text>
@@ -203,23 +157,23 @@ const OrderHistoryScreen = (props) => {
         }>
         <View style={styles.itemRow}>
           <Text style={styles.unSelectedStatusText}>
-            #{itemData.item.data.order_id}
+            #{itemData.item.order_id}
           </Text>
-          <Text style={styles.titleText}>₹{itemData.item.data.price}</Text>
+          <Text style={styles.titleText}>₹{itemData.item.price}</Text>
         </View>
         <View style={styles.textView}>
           <Text style={styles.titleText} numberOfLines={1}>
-            {itemData.item.data.pickup_location.city}
+            {itemData.item.pickup_location.city}
           </Text>
           <Text style={styles.subTitleText}>-- to --</Text>
           <Text style={styles.titleText} numberOfLines={1}>
-            {itemData.item.data.drop_location.city}
+            {itemData.item.drop_location.city}
           </Text>
         </View>
         <SelectParcel
           parcelHistory={true}
-          transporterData={itemData.item.data.transporter_details}
-        />
+          transporterData={itemData.item.transporter_details}
+        />{' '}
         <View style={styles.itemRow}>
           <TouchableOpacity
             style={styles.detailView}
@@ -242,16 +196,6 @@ const OrderHistoryScreen = (props) => {
   };
 
   const renderOngoingdHistroyData = (itemData) => {
-    const {item} = itemData;
-    const {data} = item;
-    const {driver_details} = data;
-    let name='';
-    if(driver_details!=undefined && driver_details.first_name!=undefined){
-      name = driver_details.first_name
-    }
-    if(driver_details!=undefined && driver_details.last_name){
-      name = name +' '+driver_details.last_name
-    }
     return (
       <TouchableOpacity
         style={styles.completedHistoryMainView}
@@ -269,34 +213,34 @@ const OrderHistoryScreen = (props) => {
         <View style={styles.completedHistorySubView}>
           <View style={styles.itemRow}>
             <Text style={styles.unSelectedStatusText}>
-              #{itemData.item.data.order_id}
+              #{itemData.item.order_id}
             </Text>
-            <Text style={styles.titleText}>₹{itemData.item.data.price}</Text>
+            <Text style={styles.titleText}>₹{itemData.item.price}</Text>
           </View>
           <View style={styles.textView}>
             <Text style={styles.titleText} numberOfLines={1}>
-              {itemData.item.data.pickup_location.city}
+              {itemData.item.pickup_location.city}
             </Text>
             <Text style={styles.subTitleText}>-- to --</Text>
             <Text style={styles.titleText} numberOfLines={1}>
-              {itemData.item.data.drop_location.city}
+              {itemData.item.drop_location.city}
             </Text>
           </View>
           <SelectParcel
             parcelHistory={true}
-            transporterData={itemData.item.data.transporter_details}
+            transporterData={itemData.item.transporter_details}
           />
           <View style={styles.seperateLine} />
           <View style={{margin: 8}}>
             <Text style={styles.subTitleText}>Driver Details</Text>
             <Text style={{...styles.titleText, marginTop: 4}}>
-              {name.trim()}
+              Michael Wayans
             </Text>
             <Text style={{...styles.subTitleText, marginTop: 4}}>
               Contact number
             </Text>
             <Text style={{...styles.titleText, marginTop: 4}}>
-              +91 {itemData.item.data.driver_details.phone_number}
+              +91 99844 38573
             </Text>
           </View>
           <View style={styles.seperateLine} />
@@ -313,14 +257,7 @@ const OrderHistoryScreen = (props) => {
               }>
               <Text style={styles.detailText}>Details</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={()=>{
-              props.navigation.navigate({
-                routeName: 'TrackOrder',
-                params: {
-                  orderData: itemData.item
-                }
-              })
-            }} style={styles.trackOrderView}>
+            <TouchableOpacity style={styles.trackOrderView}>
               <Text style={styles.selectedStatusText}>Track Order</Text>
             </TouchableOpacity>
           </View>
@@ -377,7 +314,7 @@ const OrderHistoryScreen = (props) => {
                 ? styles.selectedStatusText
                 : styles.unSelectedStatusText
             }>
-            Ongoing
+            On going
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -397,9 +334,7 @@ const OrderHistoryScreen = (props) => {
           </Text>
         </TouchableOpacity>
       </View>
-      {pendingFlag ? 
-        orderDataLoading ? <Loader loading={orderDataLoading} noModal={true}/> : 
-        (pendingData != undefined && pendingData.length != 0) ? 
+      {pendingFlag && (
         <FlatList
           style={{marginBottom: 16}}
           keyExtractor={(item, index) => item.id}
@@ -407,45 +342,30 @@ const OrderHistoryScreen = (props) => {
           renderItem={renderPendingHistroyData}
           showsVerticalScrollIndicator={false}
         />
-       : <EmptyData data={"pending data"} tryAgain={() => {
-        loadOrderHistoryData().then(() => {})
-      }} /> : null
-      }
+      )}
       {onGoingFlag && (
-        orderDataLoading ? <Loader loading={orderDataLoading} noModal={true}/> : 
-        ongoingData != undefined && ongoingData.length != 0 ? <FlatList
+        <FlatList
           style={{marginBottom: 16}}
           keyExtractor={(item, index) => item.id}
           data={ongoingData}
           renderItem={renderOngoingdHistroyData}
           showsVerticalScrollIndicator={false}
-        /> : <EmptyData data={"ongoing data"} tryAgain={() => {
-          loadOrderHistoryData().then(() => {})
-        }} />
+        />
       )}
       {completedFlag && (
-        orderDataLoading ? <Loader loading={orderDataLoading} noModal={true}/> : 
-        completedData != undefined && completedData.length != 0 ? <FlatList
+        <FlatList
           style={{marginBottom: 16}}
           keyExtractor={(item, index) => item.id}
           data={completedData}
           renderItem={renderCompletedHistroyData}
           showsVerticalScrollIndicator={false}
-        /> : <EmptyData data={"completed data"} tryAgain={() => {
-          loadOrderHistoryData().then(() => {})
-        }} />
+        />
       )}
     </View>
   );
 };
 
 OrderHistoryScreen.navigationOptions = (navigationData) => {
-  let isShowBack = navigationData.navigation.getParam('isShowBack');
-  if (isShowBack === undefined) {
-    isShowBack = false
-  }
-  console.log(`navigationOptions.isShowBack:`, isShowBack)
-  // isShowBack = false
   return {
     headerShown: true,
     headerTitle: 'Parcel History',
@@ -458,22 +378,12 @@ OrderHistoryScreen.navigationOptions = (navigationData) => {
       <View style={styles.viewHeaderLeft}>
         <TouchableOpacity
           onPress={() => {
-            console.log(`isShowBack:`, isShowBack)
-            if (!isShowBack) {
-              navigationData.navigation.toggleDrawer();
-            } else {
-              navigationData.navigation.pop();
-            }
+            navigationData.navigation.toggleDrawer();
           }}>
-          {!isShowBack ?
           <Image
             style={styles.menuImage}
             source={require('../../../assets/assets/dashboard/ic_menu.png')}
-          /> :
-          <Image
-            style={styles.backImage}
-            source={require('../../../assets/assets/Authentication/back.png')}
-          />}
+          />
         </TouchableOpacity>
       </View>
     ),
@@ -493,10 +403,6 @@ const styles = StyleSheet.create({
   menuImage: {
     height: 30,
     width: 30,
-  },
-  backImage: {
-    height: 40,
-    width: 40,
   },
   statusContainerView: {
     margin: 16,
@@ -539,6 +445,7 @@ const styles = StyleSheet.create({
   historyView: {
     // flex: 1,
     margin: 16,
+    marginBottom: 0,
     backgroundColor: Colors.backgroundColor,
     borderRadius: 10,
     shadowOffset: {width: 0, height: 5},

@@ -65,20 +65,22 @@ import DriverDetailScreen from '../screens/Driver/OrderHistory/DriverDetailScree
 
 import Colors from '../helper/extensions/Colors';
 import AppPreference from '../helper/preference/AppPreference';
-import * as fetchProfileDataActions from '../store/actions/customer/profile/fetchProfileData';
-import {useDispatch} from 'react-redux';
 import Session from '../helper/Session';
 import {firebase} from '@react-native-firebase/database';
-import TrackOrder from '../screens/Customer/TrackOrder';
+import TransporterRegistration from '../screens/Transpoter/TransporterRegistration';
+import TrackOrder from '../screens/Transpoter/TrackOrder';
 
-var isLoginUser = false;
-export const setIsLoginUser = tIsLoginUser => {
-  isLoginUser = tIsLoginUser;
-};
-
-export const getIsLoginUser = () => {
-  return isLoginUser;
-};
+import {NavigationActions, StackActions} from 'react-navigation';
+import Transactions from '../screens/Transactions';
+import WalletScreen from '../screens/wallet/WalletScreen';
+import TransactionsScreen from '../screens/wallet/TransactionsScreen';
+import AddMoneyScreen from '../screens/wallet/AddMoneyScreen';
+import WithdrawMoneyScreen from '../screens/wallet/WithdrawMoneyScreen';
+import TransactionStatusScreen from '../screens/wallet/TransactionStatusScreen';
+const resetAuthAction = StackActions.reset({
+  index: 0,
+  actions: [NavigationActions.navigate({routeName: 'auth'})],
+});
 
 const Auth = createStackNavigator({
   LoginScreen: {
@@ -114,12 +116,12 @@ const Auth = createStackNavigator({
 });
 
 const Slider = createStackNavigator({
-  SplashScreen: {
+  /* SplashScreen: {
     screen: SplashScreen,
     navigationOptions: {
       headerShown: false,
     },
-  },
+  }, */
   Slider1: {
     screen: SliderScreen1,
     navigationOptions: {
@@ -168,151 +170,13 @@ const Slider = createStackNavigator({
       headerShown: false,
     },
   },
-  Dashboard: {
-    screen: DashboardTrakingScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  DashboardScreen: {
-    screen: DashboardScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  AddParcelDetails: {
-    screen: AddParcelDetails,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  AddressScreen: {
-    screen: AddressScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  AddAddressScreen: {
-    screen: AddAddressScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  AddSetAddressScreen: {
-    screen: AddSetAddressScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  PlaceOrderDetails: {
-    screen: PlaceOrderDetailScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  Checkout: {
-    screen: CheckoutScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  OrderHistoryScreen: {
-    screen: OrderHistoryScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  OrderDetailsScreen: {
-    screen: OrderDetailsScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  CancelOrderScreen: {
-    screen: CancelOrderScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
-  NotificationScreen: {
-    screen: NotificationScreen,
-    navigationOptions: {
-      headerShown: true,
-    },
-  },
 });
 
-const DashboardScreenNavigator = createStackNavigator(
+const DriverHistoryScreenNavigator = createStackNavigator(
   {
-    // screen: DashboardTrakingScreen,
-    Dashboard: {
-      screen: DashboardTrakingScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    DashboardTraking: {
-      screen: DashboardTrakingScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    DashboardScreen: {
-      screen: DashboardScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    OldDashboardScreen: {
-      screen: OldDashboardScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    AddParcelDetails: {
-      screen: AddParcelDetails,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    AddressScreen: {
-      screen: AddressScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    AddAddressScreen: {
-      screen: AddAddressScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    AddSetAddressScreen: {
-      screen: AddSetAddressScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    PlaceOrderDetails: {
-      screen: PlaceOrderDetailScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    Checkout: {
-      screen: CheckoutScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    OrderHistoryScreen: {
-      screen: OrderHistoryScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    OrderDetailsScreen: {
-      screen: OrderDetailsScreen,
+    screen: DriverHistoryScreen,
+    DriverDetailScreen: {
+      screen: DriverDetailScreen,
       navigationOptions: {
         headerShown: true,
       },
@@ -321,42 +185,6 @@ const DashboardScreenNavigator = createStackNavigator(
       screen: CancelOrderScreen,
       navigationOptions: {
         headerShown: true,
-      },
-    },
-    NotificationScreen: {
-      screen: NotificationScreen,
-      navigationOptions: {
-        headerShown: true,
-      },
-    },
-    LoginScreen: {
-      screen: LoginScreen,
-      navigationOptions: {
-        headerShown: false,
-      },
-    },
-    VerificationScreen: {
-      screen: VerificationScreen,
-      navigationOptions: {
-        headerShown: false,
-      },
-    },
-    RegisterScreen: {
-      screen: RegisterScreen,
-      navigationOptions: {
-        headerShown: false,
-      },
-    },
-    RegisterAddressScreen: {
-      screen: RegisterAddressScreen,
-      navigationOptions: {
-        headerShown: false,
-      },
-    },
-    ForgotPasswordScreen: {
-      screen: ForgotPasswordScreen,
-      navigationOptions: {
-        headerShown: false,
       },
     },
     TrackOrder: {
@@ -368,24 +196,22 @@ const DashboardScreenNavigator = createStackNavigator(
   },
   {
     navigationOptions: {
-      // headerShown: true,
-      // headerTitle: false,
-      drawerLabel: 'Dashboard',
-      drawerIcon: tabInfo => (
+      drawerLabel: 'Parcel History',
+      drawerIcon: (tabInfo) => (
         <Image
-          style={[styles.homeLeftImage, {tintColor: 'white'}]}
-          source={require('../../src/assets/assets/navigation/ic_dashboard.png')}
+          style={[styles.homeLeftImage]}
+          source={require('../../src/assets/assets/navigation/ic_history.png')}
         />
       ),
     },
   },
 );
 
-const OrderHistoryScreenNavigator = createStackNavigator(
+const ParcelHistoryScreenNavigator = createStackNavigator(
   {
-    screen: OrderHistoryScreen,
-    OrderDetailsScreen: {
-      screen: OrderDetailsScreen,
+    screen: ParcelHistoryScreen,
+    ParcelDetailsScreen: {
+      screen: ParcelDetailsScreen,
       navigationOptions: {
         headerShown: true,
       },
@@ -396,23 +222,17 @@ const OrderHistoryScreenNavigator = createStackNavigator(
         headerShown: true,
       },
     },
-    /* LoginScreen: {
-      screen: LoginScreen,
-      navigationOptions: {
-        headerShown: false,
-      },
-    },
-    Dashboard: {
-      screen: DashboardTrakingScreen,
+    TrackOrder: {
+      screen: TrackOrder,
       navigationOptions: {
         headerShown: true,
       },
-    }, */
+    },
   },
   {
     navigationOptions: {
       drawerLabel: 'Parcel History',
-      drawerIcon: tabInfo => (
+      drawerIcon: (tabInfo) => (
         <Image
           style={[styles.homeLeftImage]}
           source={require('../../src/assets/assets/navigation/ic_history.png')}
@@ -420,6 +240,53 @@ const OrderHistoryScreenNavigator = createStackNavigator(
       ),
     },
   },
+);
+
+const WalletScreenNavigaotr = createStackNavigator(
+  {
+    WalletScreen: {
+      screen: WalletScreen,
+      // screen: LoginScreen,
+      navigationOptions: {
+        headerShown: false,
+      },
+    },
+    TransactionsScreen: {
+      screen: TransactionsScreen,
+      navigationOptions: {
+        headerShown: false,
+      },
+    },
+    AddMoneyScreen: {
+      screen: AddMoneyScreen,
+      navigationOptions: {
+        headerShown: false,
+      },
+    },
+    WithdrawMoneyScreen: {
+      screen: WithdrawMoneyScreen,
+      navigationOptions: {
+        headerShown: false,
+      },
+    },
+    TransactionStatusScreen: {
+      screen: TransactionStatusScreen,
+      navigationOptions: {
+        headerShown: false,
+      },
+    },
+  },
+  /* {
+    navigationOptions: {
+      drawerLabel: 'Parcel History',
+      drawerIcon: (tabInfo) => (
+        <Image
+          style={[styles.homeLeftImage]}
+          source={require('../../src/assets/assets/navigation/ic_history.png')}
+        />
+      ),
+    },
+  }, */
 );
 
 const ProfileScreenNavigator = createStackNavigator(
@@ -441,61 +308,10 @@ const ProfileScreenNavigator = createStackNavigator(
   {
     navigationOptions: {
       drawerLabel: 'My Profile',
-      drawerIcon: tabInfo => (
+      drawerIcon: (tabInfo) => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_profile.png')}
-        />
-      ),
-    },
-  },
-);
-
-const NotificationScreenNavigator = createStackNavigator(
-  {
-    screen: NotificationScreen,
-  },
-  {
-    navigationOptions: {
-      drawerLabel: 'Notification',
-      drawerIcon: tabInfo => (
-        <Image
-          style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
-          source={require('../../src/assets/assets/navigation/ic_notifications.png')}
-        />
-      ),
-    },
-  },
-);
-
-const ChangePasswordScreenNavigator = createStackNavigator(
-  {
-    screen: ChangePasswordScreen,
-  },
-  {
-    navigationOptions: {
-      drawerLabel: 'Change Password',
-      drawerIcon: tabInfo => (
-        <Image
-          style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
-          source={require('../../src/assets/assets/navigation/ic_password.png')}
-        />
-      ),
-    },
-  },
-);
-
-const DeliveryAddressScreenNavigator = createStackNavigator(
-  {
-    screen: ChangePasswordScreen,
-  },
-  {
-    navigationOptions: {
-      drawerLabel: 'Delivery Address',
-      drawerIcon: tabInfo => (
-        <Image
-          style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
-          source={require('../../src/assets/assets/navigation/ic_delivery.png')}
         />
       ),
     },
@@ -509,7 +325,7 @@ const SupportScreenNavigator = createStackNavigator(
   {
     navigationOptions: {
       drawerLabel: 'Contact Us',
-      drawerIcon: tabInfo => (
+      drawerIcon: (tabInfo) => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_contact.png')}
@@ -519,7 +335,7 @@ const SupportScreenNavigator = createStackNavigator(
   },
 );
 
-const SettingsScreenNavigator = createStackNavigator(
+const TansporterDashboardScreen = createStackNavigator(
   {
     // screen: TranspoterDashboardScreen,
     TranspoterDashboardScreen: {
@@ -542,6 +358,18 @@ const SettingsScreenNavigator = createStackNavigator(
     },
     ParcelDetailsScreen: {
       screen: ParcelDetailsScreen,
+      navigationOptions: {
+        headerShown: true,
+      },
+    },
+    CancelOrderScreen: {
+      screen: CancelOrderScreen,
+      navigationOptions: {
+        headerShown: true,
+      },
+    },
+    TrackOrder: {
+      screen: TrackOrder,
       navigationOptions: {
         headerShown: true,
       },
@@ -579,8 +407,8 @@ const SettingsScreenNavigator = createStackNavigator(
   },
   {
     navigationOptions: {
-      drawerLabel: 'Settings',
-      drawerIcon: tabInfo => (
+      drawerLabel: 'Dashboard',
+      drawerIcon: (tabInfo) => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_settings.png')}
@@ -590,11 +418,139 @@ const SettingsScreenNavigator = createStackNavigator(
   },
 );
 
-const DriverModuleScreenNavigator = createStackNavigator(
+const VehicleScreenNavigator = createStackNavigator(
+  {
+    screen: VehicleListScreen,
+    AddVehicleScreen: {
+      screen: AddVehicleScreen,
+      navigationOptions: {
+        headerShown: true,
+      },
+    },
+  },
+  {
+    navigationOptions: {
+      drawerLabel: 'Vehicle',
+      drawerIcon: (tabInfo) => (
+        <Image
+          style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
+          source={require('../../src/assets/assets/navigation/ic_vehicle.png')}
+        />
+      ),
+    },
+  },
+);
+
+const DriverScreenNavigator = createStackNavigator(
+  {
+    screen: DriverlistScreen,
+    AddDriverScreen: {
+      screen: AddDriverScreen,
+      navigationOptions: {
+        headerShown: true,
+      },
+    },
+    AddDriverUploadScreen: {
+      screen: AddDriverUploadScreen,
+      navigationOptions: {
+        headerShown: true,
+      },
+    },
+  },
+  {
+    navigationOptions: {
+      drawerLabel: 'Driver',
+      drawerIcon: (tabInfo) => (
+        <Image
+          style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
+          source={require('../../src/assets/assets/navigation/ic_driver.png')}
+        />
+      ),
+    },
+  },
+);
+
+const TansporterDashboardNavigator = createDrawerNavigator(
+  {
+    Dashboard: TansporterDashboardScreen,
+    OrderHistory: ParcelHistoryScreenNavigator,
+    Vehicle: VehicleScreenNavigator,
+    Driver: DriverScreenNavigator,
+    Profile: ProfileScreenNavigator,
+    Support: SupportScreenNavigator,
+  },
+  {
+    contentOptions: {
+      // activeBackgroundColor: Colors.buttonBackgroundColor,
+      activeTintColor: Colors.backgroundColor,
+      inactiveTintColor: Colors.backgroundColor,
+      // inactiveBackgroundColor: Colors.inputTextBackgroundColor,
+    },
+    drawerWidth: Math.round(Dimensions.get('window').width) * 0.8,
+    drawerBackgroundColor: '#F1592A',
+    labelStyle: {
+      fontSize: 14,
+    },
+    contentComponent: (props) => (
+      <View style={{flex: 1}}>
+        <SafeAreaView forceInset={{top: 'always', horizontal: 'never'}}>
+          <DrawerItems {...props} />
+          <TouchableOpacity
+            style={{flexDirection: 'row', alignItems: 'center'}}
+            onPress={() =>
+              Alert.alert(
+                'Confirmation',
+                'Do you want to logout?',
+                [
+                  {
+                    text: 'Cancel',
+                    onPress: () => {
+                      return null;
+                    },
+                  },
+                  {
+                    text: 'Ok',
+                    onPress: () => {
+                      // AsyncStorage.clear();
+                      firebase.auth().signOut();
+                      Session.removeAll();
+                      // AsyncStorage.setItem(AppPreference.IS_SLIDER, '1');
+                      props.navigation.closeDrawer();
+                      // props.navigation.navigate('auth');
+                      props.navigation.dispatch(resetAuthAction);
+                    },
+                  },
+                ],
+                {cancelable: false},
+              )
+            }
+          >
+            <Image
+              style={styles.logoutImage}
+              source={require('../../src/assets/assets/navigation/ic_logout.png')}
+            />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </View>
+    ),
+    drawerOpenRoute: 'DrawerOpen',
+    drawerCloseRoute: 'DrawerClose',
+    drawerToggleRoute: 'DrawerToggle',
+  },
+);
+
+const DriverDashbaordScreen = createStackNavigator(
   {
     // screen: TranspoterDashboardScreen,
     DriverDashboardScreen: {
       screen: DriverDashboardScreen,
+      navigationOptions: {
+        headerShown: true,
+      },
+    },
+    NotificationScreen: {
+      screen: NotificationScreen,
       navigationOptions: {
         headerShown: true,
       },
@@ -611,11 +567,23 @@ const DriverModuleScreenNavigator = createStackNavigator(
         headerShown: true,
       },
     },
+    CancelOrderScreen: {
+      screen: CancelOrderScreen,
+      navigationOptions: {
+        headerShown: true,
+      },
+    },
+    TrackOrder: {
+      screen: TrackOrder,
+      navigationOptions: {
+        headerShown: true,
+      },
+    },
   },
   {
     navigationOptions: {
-      drawerLabel: 'Driver Module',
-      drawerIcon: tabInfo => (
+      drawerLabel: 'Dashboard',
+      drawerIcon: (tabInfo) => (
         <Image
           style={[styles.homeLeftImage, {tintColor: tabInfo.tintColor}]}
           source={require('../../src/assets/assets/navigation/ic_settings.png')}
@@ -625,29 +593,12 @@ const DriverModuleScreenNavigator = createStackNavigator(
   },
 );
 
-const MainDrawerNavigator = createDrawerNavigator(
+const DriverDashboardNavigator = createDrawerNavigator(
   {
-    sliderScreen: {
-      screen: Slider,
-      navigationOptions: {
-        drawerLabel: () => null,
-      },
-    },
-    auth: {
-      screen: Auth,
-      navigationOptions: {
-        drawerLabel: () => null,
-      },
-    },
-    Dashboard: DashboardScreenNavigator,
-    OrderHistory: OrderHistoryScreenNavigator,
+    Dashboard: DriverDashbaordScreen,
+    OrderHistory: DriverHistoryScreenNavigator,
     Profile: ProfileScreenNavigator,
-    // Notification: NotificationScreenNavigator,
-    // ChangePassword: ChangePasswordScreenNavigator,
-    // DeliveryAddress: DeliveryAddressScreenNavigator,
     Support: SupportScreenNavigator,
-    // Settings: SettingsScreenNavigator,
-    // DriverModule: DriverModuleScreenNavigator,
   },
   {
     contentOptions: {
@@ -661,61 +612,91 @@ const MainDrawerNavigator = createDrawerNavigator(
     labelStyle: {
       fontSize: 14,
     },
-    contentComponent: props => {
-      // console.log(`isLoginUser: ${isLoginUser}`)
-      return (
-        <View style={{flex: 1}}>
-          <SafeAreaView forceInset={{top: 'always', horizontal: 'never'}}>
-            <DrawerItems {...props} />
-            <TouchableOpacity
-              style={{flexDirection: 'row', alignItems: 'center'}}
-              onPress={() => {
-                if (isLoginUser) {
-                  Alert.alert(
-                    'Confirmation',
-                    'Do you want to logout?',
-                    [
-                      {
-                        text: 'Cancel',
-                        onPress: () => {
-                          return null;
-                        },
-                      },
-                      {
-                        text: 'Ok',
-                        onPress: () => {
-                          // const dispatch = useDispatch();
-                          firebase.auth().signOut();
-                          Session.removeAll();
-                          // AsyncStorage.clear();
-                          // AsyncStorage.setItem(AppPreference.IS_SLIDER, '1');
-                          isLoginUser = false;
-                          props.navigation.closeDrawer();
-                          props.navigation.navigate('LoginScreen');
-                        },
-                      },
-                    ],
-                    {cancelable: false},
-                  );
-                } else {
-                  props.navigation.navigate('LoginScreen');
-                }
-              }}>
-              <Image
-                style={styles.logoutImage}
-                source={require('../../src/assets/assets/navigation/ic_logout.png')}
-              />
-              <Text style={styles.logoutText}>
-                {isLoginUser ? 'Logout' : 'Login'}
-              </Text>
-            </TouchableOpacity>
-          </SafeAreaView>
-        </View>
-      );
-    },
+    contentComponent: (props) => (
+      <View style={{flex: 1}}>
+        <SafeAreaView forceInset={{top: 'always', horizontal: 'never'}}>
+          <DrawerItems {...props} />
+          <TouchableOpacity
+            style={{flexDirection: 'row', alignItems: 'center'}}
+            onPress={() =>
+              Alert.alert(
+                'Confirmation',
+                'Do you want to logout?',
+                [
+                  {
+                    text: 'Cancel',
+                    onPress: () => {
+                      return null;
+                    },
+                  },
+                  {
+                    text: 'Ok',
+                    onPress: () => {
+                      // AsyncStorage.clear();
+                      firebase.auth().signOut();
+                      Session.removeAll();
+                      // AsyncStorage.setItem(AppPreference.IS_SLIDER, '1');
+                      props.navigation.closeDrawer();
+                      // props.navigation.navigate('auth');
+                      props.navigation.dispatch(resetAuthAction);
+                    },
+                  },
+                ],
+                {cancelable: false},
+              )
+            }
+          >
+            <Image
+              style={styles.logoutImage}
+              source={require('../../src/assets/assets/navigation/ic_logout.png')}
+            />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </View>
+    ),
     drawerOpenRoute: 'DrawerOpen',
     drawerCloseRoute: 'DrawerClose',
     drawerToggleRoute: 'DrawerToggle',
+  },
+);
+
+const MainDrawerNavigator = createStackNavigator(
+  {
+    SplashScreen: {
+      screen: SplashScreen,
+      navigationOptions: {
+        headerShown: false,
+      },
+    },
+    TransporterRegistration: {
+      screen: TransporterRegistration,
+      navigationOptions: {
+        headerShown: true,
+      },
+      // path: 'road_ferry/:user_id'
+    },
+    sliderScreen: {
+      screen: Slider,
+      navigationOptions: {
+        drawerLabel: () => null,
+      },
+    },
+    auth: {
+      screen: Auth,
+      navigationOptions: {
+        drawerLabel: () => null,
+      },
+    },
+    Dashboard: TansporterDashboardNavigator,
+    DriverDashboard: DriverDashboardNavigator,
+    verificationUserScreen: VerificationScreen,
+    Wallet: WalletScreenNavigaotr,
+  },
+  {
+    defaultNavigationOptions: {
+      headerShown: false,
+    },
   },
 );
 
@@ -741,4 +722,9 @@ const styles = StyleSheet.create({
   },
 });
 
-export default createAppContainer(Slider);
+const AppContainer = createAppContainer(MainDrawerNavigator);
+
+export default () => {
+  const prefix = 'com.ms.logistics://';
+  return <AppContainer uriPrefix={prefix} />;
+};

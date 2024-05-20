@@ -3,10 +3,17 @@ import {StyleSheet, View, Modal, ActivityIndicator} from 'react-native';
 import Colors from '../../helper/extensions/Colors';
 
 const Loader = (props) => {
-  const {loading, noModal, ...attributes} = props;
+  const {loading, ...attributes} = props;
 
-  return noModal ? (
-      <View style={styles.background}>
+  return (
+    <Modal
+      transparent={true}
+      animationType={'none'}
+      visible={loading}
+      onRequestClose={() => {
+        console.log('close modal');
+      }}>
+      <View style={styles.modalBackground}>
         <View style={styles.activityIndicatorWrapper}>
           <ActivityIndicator
             color={Colors.backgroundColor}
@@ -15,36 +22,11 @@ const Loader = (props) => {
           />
         </View>
       </View>
-    )
-    :
-    (
-      <Modal
-        transparent={true}
-        animationType={'none'}
-        visible={loading}
-        onRequestClose={() => {
-          console.log('close modal');
-        }}>
-        <View style={styles.modalBackground}>
-          <View style={styles.activityIndicatorWrapper}>
-            <ActivityIndicator
-              color={Colors.backgroundColor}
-              animating={loading}
-              size="large"
-            />
-          </View>
-        </View>
-      </Modal>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    alignItems: 'center',
-    flexDirection: 'column',
-    justifyContent: 'space-around'
-  },
   modalBackground: {
     flex: 1,
     alignItems: 'center',
@@ -60,7 +42,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-around',
-  }
+  },
 });
 
 export default Loader;

@@ -14,7 +14,6 @@ import {
   AsyncStorage,
   Alert,
   NativeModules,
-  Platform,
 } from 'react-native';
 
 // Import the Plugins and Thirdparty library.
@@ -83,7 +82,7 @@ const ForgotPasswordScreen = (props) => {
       <SafeAreaView
         style={{flex: 1, backgroundColor: Colors.mainBackgroundColor}}>
         <ScrollView style={styles.container}>
-          <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={Platform.OS == "android" ? 0 : 30}>
+          <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={30}>
             <Loader loading={isLoading} />
             <TouchableOpacity onPress={() => props.navigation.pop()}>
               <Image

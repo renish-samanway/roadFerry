@@ -3,7 +3,6 @@ import DropLocationData from '../../../../helper/models/addParcelDetails/DropLoc
 export const SET_DROP_LOCATION_DATA = 'SET_DROP_LOCATION_DATA';
 
 export const setDropLocationData = (
-  coordinate,
   firstName,
   lastName,
   email,
@@ -22,7 +21,6 @@ export const setDropLocationData = (
     //   if (status === 'pickup') {
     console.log('ENTER');
     const loadedDropLocationData = new DropLocationData(
-      coordinate,
       firstName,
       lastName,
       email,
@@ -37,7 +35,7 @@ export const setDropLocationData = (
       insurance,
     );
     console.log('CLOSE');
-    //console.log('Drop Location Data is : ', loadedDropLocationData);
+    console.log('Drop Location Data is : ', loadedDropLocationData);
 
     dispatch({
       type: SET_DROP_LOCATION_DATA,

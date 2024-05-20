@@ -1,6 +1,5 @@
 class DropLocationData {
   constructor(
-    coordinate,
     first_name,
     last_name,
     email,
@@ -13,9 +12,7 @@ class DropLocationData {
     pincode,
     notify,
     insurance,
-    end_trip_otp = false
   ) {
-    this.coordinate = coordinate;
     this.first_name = first_name;
     this.last_name = last_name;
     this.email = email;
@@ -28,7 +25,6 @@ class DropLocationData {
     this.pincode = pincode;
     this.notify = notify;
     this.insurance = insurance;
-    this.end_trip_otp = end_trip_otp
   }
 }
 

@@ -29,7 +29,15 @@ import AppConstants from '../../../helper/constants/AppConstants';
 // Load the main class.
 
 const DriverlistScreen = (props) => {
-  const userID = 'B4Ti8IgLgpsKZECGqOJ0';
+  const profileData = useSelector(
+    (state) => state.fetchProfileData.fetchProfileData,
+  );
+  
+  let userUID = useSelector(
+    (state) => state.fetchProfileData.userUID,
+  );
+  // userUID = "B4Ti8IgLgpsKZECGqOJ0"
+  console.log(`DriverlistScreen.userUID: ${userUID}`)
   // const [isLoading, setIsLoading] = useState(false);
   const isLoading = useSelector(
     (state) => state.transporterDriverData.isLoading,
@@ -44,7 +52,7 @@ const DriverlistScreen = (props) => {
 
   const getDriverList = (isStartProgress) => {
     try {
-      dispatch(getDriverDataAction.fetchDriverList(userID, isStartProgress));
+      dispatch(getDriverDataAction.fetchDriverList(userUID, isStartProgress));
     } catch (err) {
       console.log(`getDriverDataAction.fetchDriverList.error: ${err}`);
     }
@@ -63,6 +71,16 @@ const DriverlistScreen = (props) => {
   } */
 
   const pressDeleteButton = (item, index) => {
+    console.log('deleted driver data',item)
+    if(item.data.is_assign){
+      Alert.alert(
+        'Alert',
+        'You cannot delete this user until an order is ongoing.',
+        [{text: 'OK', onPress: () => console.log('OK Pressed')}],
+        {cancelable: false},
+      );
+      return
+    }
     console.log(`pressDeleteButton.item.id: ${item.id}`)
     Alert.alert(
       'Alert',
@@ -79,13 +97,17 @@ const DriverlistScreen = (props) => {
           onPress: () => {
             // setIsLoading(true)
             // isLoading = true
-            firestore().collection('users').doc(item.data.user_uid).delete().then(()=> {
+            firestore()
+            .collection('users')
+            .doc(item.data.user_uid)
+            .update({is_deleted: true})
+            .then(()=> {
               firestore()
               .collection('users')
-              .doc(userID)
+              .doc(userUID)
               .collection('driver_details')
               .doc(item.id)
-              .delete()
+              .update({is_deleted: true})
               .then(() => {
                 console.log('User deleted!');
                 getDriverList(true)
@@ -117,14 +139,19 @@ const DriverlistScreen = (props) => {
     /* let data = `${itemData.item.driver_photo.data}`
     console.log(`data: ${data.toBase64}`)
     console.log(`type: ${itemData.item.driver_photo.type}`) */
-    if (itemData.item.data.driver_photo.base64 == undefined) {
+    /* if (itemData.item.data.driver_photo.base64 == undefined) {
       return
+    } */
+    console.log(`driver_photo:`,itemData.item.data.driver_photo)
+    let URI = ''
+    if (itemData.item.data.driver_photo) {
+      URI = typeof(itemData.item.data.driver_photo) === 'string' ? itemData.item.data.driver_photo : `data:${itemData.item.data.driver_photo.type};base64,${itemData.item.data.driver_photo.base64}`
     }
-    let color = itemData.item.data.status === AppConstants.driverStatusVerifiedKey ? 'green' : 'gray'
+    let color = itemData.item.data.is_verified === AppConstants.driverStatusVerifiedKey ? 'green' : 'gray'
     return (
       <Swipeable
         renderRightActions={() => (
-          <SwipableButtons editButton={() => openEditDriver(itemData)} deleteButton={() => pressDeleteButton(itemData.item, index)} />
+          <SwipableButtons isSelf={userUID == itemData.item.data.user_uid} editButton={() => openEditDriver(itemData)} deleteButton={() => pressDeleteButton(itemData.item, index)} />
         )}>
         <TouchableOpacity
           style={styles.driverView}
@@ -134,11 +161,12 @@ const DriverlistScreen = (props) => {
           <Image
             style={styles.driverImage}
             // source={require('../../../assets/assets/dashboard/parcelImage.jpeg')}
-            source={{uri: `data:${itemData.item.data.driver_photo.type};base64,${itemData.item.data.driver_photo.base64.toBase64()}`}}
+            // source={{uri: `data:${itemData.item.data.driver_photo.type};base64,${itemData.item.data.driver_photo.base64.toBase64()}`}}
+            source={URI == '' ? require('../../../assets/assets/default_user.png') : {uri: URI}}
           />
           <View style={{flex: 1}}>
             <Text style={styles.titleText}>
-              {itemData.item.data.first_name} {itemData.item.data.last_name}
+              {userUID == itemData.item.data.user_uid ? 'Self' : `${itemData.item.data.first_name} ${itemData.item.data.last_name}`}
             </Text>
             <Text style={styles.subTitleText}>
               {itemData.item.data.phone_number}
@@ -152,7 +180,7 @@ const DriverlistScreen = (props) => {
             }}>
             <Icon name="check-circle-outline" size={24} color={color} />
             <Text style={[styles.subTitleText, {color: color}]}>
-              {itemData.item.data.status}
+              {itemData.item.data.is_verified}
             </Text>
           </View>
         </TouchableOpacity>
@@ -188,6 +216,10 @@ const DriverlistScreen = (props) => {
 };
 
 DriverlistScreen.navigationOptions = (navigationData) => {
+  let isShowBack = navigationData.navigation.getParam('isShowBack');
+  if (isShowBack === undefined) {
+    isShowBack = false
+  }
   return {
     headerShown: true,
     headerTitle: 'Drivers',
@@ -201,12 +233,19 @@ DriverlistScreen.navigationOptions = (navigationData) => {
       <View style={styles.viewHeaderLeft}>
         <TouchableOpacity
           onPress={() => {
-            navigationData.navigation.pop();
+            if (isShowBack) {
+              navigationData.navigation.pop();
+            } else {
+              navigationData.navigation.toggleDrawer();
+            }
           }}>
-          <Image
+          {isShowBack ? <Image
             style={styles.menuImage}
             source={require('../../../assets/assets/Authentication/back.png')}
-          />
+          /> : <Image
+            style={styles.menuImage}
+            source={require('../../../assets/assets/dashboard/ic_menu.png')}
+          />}
         </TouchableOpacity>
       </View>
     ),

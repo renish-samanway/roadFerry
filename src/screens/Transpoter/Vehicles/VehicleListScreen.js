@@ -28,7 +28,15 @@ import firestore from '@react-native-firebase/firestore';
 // Load the main class.
 
 const VehicleListScreen = (props) => {
-  const userID = 'B4Ti8IgLgpsKZECGqOJ0';
+  const profileData = useSelector(
+    (state) => state.fetchProfileData.fetchProfileData,
+  );
+  
+  let userUID = useSelector(
+    (state) => state.fetchProfileData.userUID,
+  );
+  // userUID = "B4Ti8IgLgpsKZECGqOJ0"
+  console.log(`AddVehicleScreen.userUID: ${userUID}`)
 
   const isLoading = useSelector(
     (state) => state.transporterVehicleData.isLoading,
@@ -36,6 +44,14 @@ const VehicleListScreen = (props) => {
   const vehicleList = useSelector(
     (state) => state.transporterVehicleData.vehicleData,
   );
+
+  /* useEffect(() => {
+    console.log(`vehicleList:`, vehicleList)
+    if (vehicleList && vehicleList.length == 0) {
+      openAddVehicleView()
+    }
+  }, [vehicleList]); */
+
   const dispatch = useDispatch();
   useEffect(() => {
     getVehicleList(true);
@@ -43,7 +59,7 @@ const VehicleListScreen = (props) => {
 
   const getVehicleList = (isStartProgress) => {
     try {
-      dispatch(getVehicleDataAction.fetchVehicleList(userID, isStartProgress));
+      dispatch(getVehicleDataAction.fetchVehicleList(userUID, isStartProgress));
     } catch (err) {
       console.log(`getVehicleDataAction.fetchVehicleList.error: ${err}`);
     }
@@ -76,12 +92,13 @@ const VehicleListScreen = (props) => {
         {
           text: 'Ok',
           onPress: () => {
+            firestore().collection('vehicle_details').doc(item.id).update({is_deleted: true})
             firestore()
             .collection('users')
-            .doc(userID)
+            .doc(userUID)
             .collection('vehicle_details')
             .doc(item.id)
-            .delete()
+            .update({is_deleted: true})
             .then(() => {
               console.log('User deleted!');
               getVehicleList(true)
@@ -98,9 +115,18 @@ const VehicleListScreen = (props) => {
   const renderDriverData = (itemData, index) => {
     let tVehiclePhotosList = [...itemData.item.data.vehicle_photos]
     // console.log(`tVehiclePhotosList[0].base64.1`, tVehiclePhotosList[0].base64)
-    let base64Value = tVehiclePhotosList[0].base64.toBase64()
-    // console.log(`tVehiclePhotosList[0].base64.2`, tVehiclePhotosList[0].base64)
-    let color = itemData.item.data.status === AppConstants.vehicleStatusVerifiedKey ? 'green' : 'gray'
+    // let base64Value = tVehiclePhotosList[0].base64.toBase64()
+    /* if (tVehiclePhotosList[0] == undefined) {
+      console.log(`itemData.item.data.vehicle_number:`, itemData.item.data.vehicle_number)
+      return null
+    } */
+    // console.log(`tVehiclePhotosList:`, tVehiclePhotosList)
+    let URI = ''
+    if (tVehiclePhotosList && tVehiclePhotosList.length != 0) {
+      URI = typeof(tVehiclePhotosList[0]) === 'string' ? tVehiclePhotosList[0] : `data:${tVehiclePhotosList[0].type};base64,${tVehiclePhotosList[0].base64}`
+    }
+
+    let color = itemData.item.data.is_verified === AppConstants.vehicleStatusVerifiedKey ? 'green' : 'gray'
     return (
       <Swipeable
         renderRightActions={() => (
@@ -108,9 +134,9 @@ const VehicleListScreen = (props) => {
         )}>
         <TouchableOpacity style={styles.driverView}
           onPress={() => openEditVehicleScreen(itemData)}>
-          <Image
+        <Image
             style={styles.driverImage}
-            source={{uri: `data:${tVehiclePhotosList[0].type};base64,${base64Value}`}}
+            source={URI == '' ? require('../../../assets/assets/default_user.png') : {uri: URI}}
           />
           <View style={{ flex: 1 }}>
             <Text style={styles.titleText}>{itemData.item.data.vehicle_type}</Text>
@@ -124,13 +150,25 @@ const VehicleListScreen = (props) => {
             }}>
             <Icon name="check-circle-outline" size={24} color={color} />
             <Text style={[styles.subTitleText, {color: color}]}>
-              {itemData.item.data.status}
+              {itemData.item.data.is_verified}
             </Text>
           </View>
         </TouchableOpacity>
       </Swipeable>
     );
   };
+
+  const openAddVehicleView = () => {
+    props.navigation.navigate({
+      routeName: 'AddVehicleScreen',
+      params: {
+        refreshData: () => {
+          getVehicleList(true);
+        }
+      }
+    })
+  }
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -143,12 +181,7 @@ const VehicleListScreen = (props) => {
       <TouchableOpacity
         style={styles.addDriverView}
         onPress={() =>
-          props.navigation.navigate({
-            routeName: 'AddVehicleScreen',
-            refreshData: () => {
-              getVehicleList(true);
-            }
-          })
+          openAddVehicleView()
         }>
         <Text style={styles.addDriverText}>ADD VEHICLE</Text>
       </TouchableOpacity>
@@ -158,6 +191,10 @@ const VehicleListScreen = (props) => {
 };
 
 VehicleListScreen.navigationOptions = (navigationData) => {
+  let isShowBack = navigationData.navigation.getParam('isShowBack');
+  if (isShowBack === undefined) {
+    isShowBack = false
+  }
   return {
     headerShown: true,
     headerTitle: 'Vehicles',
@@ -171,12 +208,19 @@ VehicleListScreen.navigationOptions = (navigationData) => {
       <View style={styles.viewHeaderLeft}>
         <TouchableOpacity
           onPress={() => {
-            navigationData.navigation.pop();
+            if (isShowBack) {
+              navigationData.navigation.pop();
+            } else {
+              navigationData.navigation.toggleDrawer();
+            }
           }}>
-          <Image
+          {isShowBack ? <Image
             style={styles.menuImage}
             source={require('../../../assets/assets/Authentication/back.png')}
-          />
+          /> : <Image
+            style={styles.menuImage}
+            source={require('../../../assets/assets/dashboard/ic_menu.png')}
+          />}
         </TouchableOpacity>
       </View>
     ),

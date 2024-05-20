@@ -3,7 +3,6 @@ import PickupLocationData from '../../../../helper/models/addParcelDetails/Picku
 export const SET_PICKUP_LOCATION_DATA = 'SET_PICKUP_LOCATION_DATA';
 
 export const setPickupLocationData = (
-  coordinate,
   firstName,
   lastName,
   email,
@@ -22,14 +21,12 @@ export const setPickupLocationData = (
   height,
   pickupDateTime,
   comment,
-  e_challan
 ) => {
   return async (dispatch) => {
     // any async code you want!
     //   if (status === 'pickup') {
     console.log('ENTER');
     const loadedPickupLocationData = new PickupLocationData(
-      coordinate,
       firstName,
       lastName,
       email,
@@ -48,10 +45,9 @@ export const setPickupLocationData = (
       height,
       pickupDateTime,
       comment,
-      e_challan
     );
-    // console.log('CLOSE');
-    // console.log('Pickup Location Data is : ', loadedPickupLocationData);
+    console.log('CLOSE');
+    console.log('Pickup Location Data is : ', loadedPickupLocationData);
 
     dispatch({
       type: SET_PICKUP_LOCATION_DATA,

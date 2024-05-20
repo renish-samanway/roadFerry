@@ -111,8 +111,8 @@ const DashboardScreen = (props) => {
           //   '<<< LAT/LAN' + currentLatitude + ', ' + currentLongitude,
           // );
           setGetRegion({
-            latitude: parseFloat(currentLatitude),
-            longitude: parseFloat(currentLongitude),
+            latitude: currentLatitude,
+            longitude: currentLongitude,
             latitudeDelta: 0.5,
             longitudeDelta: 0.5,
           });
@@ -150,8 +150,8 @@ const DashboardScreen = (props) => {
         //getting the Latitude from the location json
         // console.log('<<< LAT/LAN' + currentLatitude + ', ' + currentLongitude);
         setGetRegion({
-          latitude: parseFloat(currentLatitude),
-          longitude: parseFloat(currentLongitude),
+          latitude: currentLatitude,
+          longitude: currentLongitude,
           latitudeDelta: 0.5,
           longitudeDelta: 0.5,
         });
@@ -201,8 +201,8 @@ const DashboardScreen = (props) => {
                 //   '<<< LAT/LAN' + currentLatitude + ', ' + currentLongitude,
                 // );
                 setGetRegion({
-                  latitude: parseFloat(currentLatitude),
-                  longitude: parseFloat(currentLongitude),
+                  latitude: currentLatitude,
+                  longitude: currentLongitude,
                   latitudeDelta: 0.5,
                   longitudeDelta: 0.5,
                 });
@@ -245,8 +245,8 @@ const DashboardScreen = (props) => {
               //   '<<< LAT/LAN' + currentLatitude + ', ' + currentLongitude,
               // );
               setGetRegion({
-                latitude: parseFloat(currentLatitude),
-                longitude: parseFloat(currentLongitude),
+                latitude: currentLatitude,
+                longitude: currentLongitude,
                 latitudeDelta: 0.5,
                 longitudeDelta: 0.5,
               });
@@ -366,21 +366,15 @@ const DashboardScreen = (props) => {
         showsUserLocation={true}
         // onRegionChangeComplete={onRegionChange}
         showsMyLocationButton={true}>
-        {userDataList.map((marker, index) => {
-          // console.log(`marker.data.address:`, marker.data.address)
-          // console.log(`typeof(marker.data.address.coordinates.latitude):`, typeof(marker.data.address.coordinates.latitude))
-          // console.log(`typeof(marker.data.address.coordinates.longitude):`, typeof(marker.data.address.coordinates.longitude))
-          let coordinates = {latitude: parseFloat(marker.data.address.coordinates.latitude), longitude: parseFloat(marker.data.address.coordinates.longitude)}
-          return (
-            <Marker
-              key={index}
-              coordinate={coordinates}
-              image={require('../../../assets/assets/dashboard/delivery-truck.png')}
-              // title={marker.address.title}
-              // description={marker.description}
-            />
-          )}
-        )}
+        {userDataList.map((marker, index) => (
+          <Marker
+            key={index}
+            coordinate={marker.address.coordinates}
+            image={require('../../../assets/assets/dashboard/delivery-truck.png')}
+            // title={marker.address.title}
+            // description={marker.description}
+          />
+        ))}
       </MapView>
       <View style={styles.markerFixed}>
         <Image
@@ -460,7 +454,7 @@ const DashboardScreen = (props) => {
             textContentType="name"
             keyboardType="number-pad"
             ref={(ref) => {
-              // this._weightinput = ref;
+              this._weightinput = ref;
             }}
             onSubmitEditing={() =>
               this._dimensioninput && this._dimensioninput.focus()

@@ -1,6 +1,5 @@
 class PickupLocationData {
   constructor(
-    coordinate,
     first_name,
     last_name,
     email,
@@ -19,9 +18,7 @@ class PickupLocationData {
     height,
     pickup_date_time,
     comment,
-    e_challan
   ) {
-    this.coordinate=coordinate;
     this.first_name = first_name;
     this.last_name = last_name;
     this.email = email;
@@ -40,7 +37,6 @@ class PickupLocationData {
     this.height = height;
     this.pickup_date_time = pickup_date_time;
     this.comment = comment;
-    this.e_challan = e_challan;
   }
 }
 

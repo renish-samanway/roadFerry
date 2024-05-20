@@ -1,4 +1,4 @@
-import {GET_VEHICLE_LIST, IS_LOADING} from '../../../actions/transporter/vehicle/getVehicleData';
+import {GET_VEHICLE_LIST, IS_VEHICLE_LOADING} from '../../../actions/transporter/vehicle/getVehicleData';
 
 const initialState = {
   vehicleData: [],
@@ -12,7 +12,7 @@ export default (state = initialState, action) => {
         vehicleData: action.vehicleData,
         isLoading: action.isLoading
       };
-    case IS_LOADING:
+    case IS_VEHICLE_LOADING:
       return {
         isLoading: action.isLoading
       }

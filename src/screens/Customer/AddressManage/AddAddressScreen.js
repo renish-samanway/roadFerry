@@ -37,108 +37,19 @@ import {
 } from '../../../helper/extensions/Validator';
 import Loader from '../../../components/design/Loader';
 import AppConstants from '../../../helper/constants/AppConstants';
-import { id } from 'date-fns/locale';
-import {TextInput as Input} from 'react-native-paper';
+
 // Load the main class.
 
 const AddAddressScreen = (props) => {
   const statusAddAddress = props.navigation.getParam('statusAddAddress');
-  const onlyAddressUpdate = props.navigation.getParam('onlyAddressUpdate');
-  // console.log('statusAddAddress1111', statusAddAddress);
-  let isEdit = props.navigation.getParam('isEdit');
-  if (isEdit == undefined) {
-    isEdit = false
-  }
-  
-  let isEditFromParcelScreen = props.navigation.getParam('isEditFromParcelScreen');
-  if (isEditFromParcelScreen == undefined) {
-    isEditFromParcelScreen = false
-  }
-
-  let id = ''
-  let nameValue = {value: '', error: ''}
-  let lastNameValue = {value: '', error: ''}
-  let emailValue = {value: '', error: ''}
-  let phoneValue = {value: '', error: ''}
-  let flatNameValue = ''
-  let areaValue = ''
-  let cityValue = ''
-  let stateValue = ''
-  let countryValue = ''
-  let pincodeValue = ''
-  let coordinateValue = {}
-
-  if (isEdit) {
-    id = props.navigation.getParam('id');
-    nameValue.value = props.navigation.getParam('name');
-    lastNameValue.value = props.navigation.getParam('lastName');
-    emailValue.value = props.navigation.getParam('email');
-    phoneValue.value = props.navigation.getParam('phone');
-
-    flatNameValue = props.navigation.getParam('flat_name');
-    areaValue = props.navigation.getParam('area');
-    cityValue = props.navigation.getParam('city');
-    stateValue = props.navigation.getParam('state');
-    countryValue = props.navigation.getParam('country');
-    pincodeValue = props.navigation.getParam('pincode');
-    coordinateValue = props.navigation.getParam('coordinate');
-    console.log(`coordinateValue: ${JSON.stringify(coordinateValue)}`)
-    
-  }
-  
-  const [name, setName] = useState(nameValue);
-  const [lastName, setLastName] = useState(lastNameValue);
-  const [email, setEmail] = useState(emailValue);
-  const [phone, setPhone] = useState(phoneValue);
+  console.log('statusAddAddress', statusAddAddress);
+  const [name, setName] = useState({value: '', error: ''});
+  const [lastName, setLastName] = useState({value: '', error: ''});
+  const [email, setEmail] = useState({value: '', error: ''});
+  const [phone, setPhone] = useState({value: '', error: ''});
   const [isLoading, setIsLoading] = useState(false);
 
-
-  const navigateToSetAddressScreen = (replace=false) => {
-    const routeProps = {
-      routeName: 'AddSetAddressScreen',
-      params: {
-        id: id,
-        firstName: name.value,
-        lastName: lastName.value,
-        email: email.value,
-        phone: phone.value,
-        statusAddAddress: statusAddAddress,
-        isEdit: isEdit,
-        isEditFromParcelScreen: isEditFromParcelScreen,
-        flat_name: flatNameValue,
-        area: areaValue,
-        city: cityValue,
-        state: stateValue,
-        country: countryValue,
-        pincode: pincodeValue,
-        coordinate: coordinateValue
-      },
-    }
-    if(replace){
-      props.navigation.replace({
-        ...routeProps
-      });
-    }
-    else{
-      props.navigation.navigate({
-        ...routeProps
-      });
-    }
-  }
-
-  if(onlyAddressUpdate){
-    navigateToSetAddressScreen(true);
-  }
-
   const onPressRegister = () => {
-    /* props.navigation.navigate({
-      routeName: 'AddressScreen',
-      params: {
-        isRefreshData: true
-      },
-    });
-    return */
-
     const nameError = nameValidator(name.value);
     const lastNameError = lastNameValidator(lastName.value);
     const emailError = emailValidator(email.value);
@@ -157,16 +68,22 @@ const AddAddressScreen = (props) => {
       setPhone({...phone, error: phoneError});
       return;
     } else {
-      navigateToSetAddressScreen();
+      props.navigation.navigate({
+        routeName: 'AddSetAddressScreen',
+        params: {
+          firstName: name.value,
+          lastName: lastName.value,
+          email: email.value,
+          phone: phone.value,
+          statusAddAddress: statusAddAddress,
+        },
+      });
     }
   };
 
-  const addAddressView = () => {
-    return (
-      <ScrollView 
-        style={styles.container}
-        keyboardShouldPersistTaps={"handled"}
-      >
+  return (
+    <ScrollView style={styles.container}>
+      <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={30}>
         <Loader loading={isLoading} />
         <View style={styles.lineView}>
           <View style={styles.activeDotView}>
@@ -191,14 +108,14 @@ const AddAddressScreen = (props) => {
             onChangeText={(text) => setName({value: text, error: ''})}
             error={!!name.error}
             errorText={name.error}
-            autoCapitalize="words"
+            autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
             ref={(ref) => {
-              // this._nameinput = ref;
+              this._nameinput = ref;
             }}
-            // onSubmitEditing={() => this._lastinput && this._lastinput.focus()}
+            onSubmitEditing={() => this._lastinput && this._lastinput.focus()}
           />
           <TextInput
             //   style={styles.nameInputText}
@@ -208,14 +125,14 @@ const AddAddressScreen = (props) => {
             onChangeText={(text) => setLastName({value: text, error: ''})}
             error={!!lastName.error}
             errorText={lastName.error}
-            autoCapitalize="words"
+            autoCapitalize="none"
             autoCompleteType="name"
             textContentType="name"
             keyboardType="default"
             ref={(ref) => {
-              // this._lastinput = ref;
+              this._lastinput = ref;
             }}
-            // onSubmitEditing={() => this._emailinput && this._emailinput.focus()}
+            onSubmitEditing={() => this._emailinput && this._emailinput.focus()}
           />
           <TextInput
             //   style={styles.emailInputText}
@@ -230,9 +147,9 @@ const AddAddressScreen = (props) => {
             textContentType="emailAddress"
             keyboardType="email-address"
             ref={(ref) => {
-              // this._emailinput = ref;
+              this._emailinput = ref;
             }}
-            // onSubmitEditing={() => this._phoneinput && this._phoneinput.focus()}
+            onSubmitEditing={() => this._phoneinput && this._phoneinput.focus()}
           />
           <TextInput
             //   style={styles.phoneInputText}
@@ -248,12 +165,11 @@ const AddAddressScreen = (props) => {
             maxLength={10}
             keyboardType="phone-pad"
             ref={(ref) => {
-              // this._phoneinput = ref;
+              this._phoneinput = ref;
             }}
-            /* onSubmitEditing={() =>
+            onSubmitEditing={() =>
               this._addressinput && this._addressinput.focus()
-            } */
-            left={<Input.Affix customTextStyle={{ marginRight: 12 }} text={`${AppConstants.country_code} `} />}
+            }
           />
         </View>
         <TouchableOpacity style={styles.nextView} onPress={onPressRegister}>
@@ -262,24 +178,15 @@ const AddAddressScreen = (props) => {
             source={require('../../../assets/assets/SliderScreen/next.png')}
           />
         </TouchableOpacity>
-      </ScrollView>
-    )
-  }
-
-  return Platform.OS == "android" ? <View style={{flex: 1}}>
-    {addAddressView()}
-  </View> : 
-  <KeyboardAvoidingView style={styles.container} behavior="padding">
-    {addAddressView()}
-  </KeyboardAvoidingView>
-  ;
+      </KeyboardAvoidingView>
+    </ScrollView>
+  );
 };
 
 AddAddressScreen.navigationOptions = (navigationData) => {
-  const isEdit = navigationData.navigation.getParam('isEdit');
   return {
     headerShown: true,
-    headerTitle: !isEdit ? 'Add Address' : 'Edit Address',
+    headerTitle: 'Add Address',
     headerStyle: {
       elevation: 0,
       shadowOpacity: 0,

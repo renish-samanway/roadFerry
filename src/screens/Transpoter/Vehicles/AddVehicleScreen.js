@@ -40,11 +40,21 @@ import Loader from '../../../components/design/Loader';
 import AppConstants from '../../../helper/constants/AppConstants';
 import UploadImage from '../../../components/transpoter/Drivers/UploadImage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useDispatch, useSelector } from 'react-redux';
+import * as fetchVehicleTypeListAction from '../../../store/actions/transporter/vehicle/getVehicleType';
+import { color } from 'react-native-reanimated';
+import storage from '@react-native-firebase/storage'
 
 // Load the main class.
 
 const AddVehicleScreen = (props) => {
   const statusAddAddress = props.navigation.getParam('statusAddAddress');
+
+  let userUID = useSelector(
+    (state) => state.fetchProfileData.userUID,
+  );
+  // userUID = "B4Ti8IgLgpsKZECGqOJ0"
+  console.log(`AddVehicleScreen.userUID: ${userUID}`)
 
   var isEdit = props.navigation.getParam('isEdit');
   if (isEdit === undefined) {
@@ -64,21 +74,14 @@ const AddVehicleScreen = (props) => {
   let vehicleTypeFlagValue = true
   let isVerified = false
 
-  const convertData = (imageData) => {
-    let base64Data = {}
-    base64Data.base64 = imageData.base64.toBase64()
-    base64Data.type = imageData.type
-    return base64Data
-  }
-
   if (vehicleData != undefined) {
-    isVerified = vehicleData.data.status == AppConstants.vehicleStatusVerifiedKey
+    isVerified = vehicleData.data.is_verified == AppConstants.vehicleStatusVerifiedKey
     vehicleTypeValue = {value: vehicleData.data.vehicle_type, error: ''}
     vehicleNumberValue = {value: vehicleData.data.vehicle_number, error: ''}
     chassisNumberValue = {value: vehicleData.data.chassis_number, error: ''}
     commentValue = {value: vehicleData.data.comment, error: ''}
-    // vehiclePhotosValue = {value: vehicleData.data.vehicle_photos, error: ''}
-    let tVehiclePhotosList = [...vehicleData.data.vehicle_photos]
+    vehiclePhotosValue = {value: [...vehicleData.data.vehicle_photos], error: ''}
+    /* let tVehiclePhotosList = [...vehicleData.data.vehicle_photos]
     //console.log(`vehicleData.data.vehicle_photos.length: ${vehicleData.data.vehicle_photos.length}`)
     for (let i = 0; i < tVehiclePhotosList.length; i++) {
       // console.log(`tVehiclePhotosList[i].base64:`, tVehiclePhotosList[i].base64)
@@ -87,9 +90,28 @@ const AddVehicleScreen = (props) => {
       vehiclePhotosData.type = vehiclePhotosData.type
       tVehiclePhotosList[i] = vehiclePhotosData
     }
-    vehiclePhotosValue = {value: tVehiclePhotosList, error: ''}
+    vehiclePhotosValue = {value: tVehiclePhotosList, error: ''} */
     vehicleTypeFlagValue = false
   }
+
+  const [vehicleTypeSearchList, setVehicleTypeSearchList] = useState([]);
+
+  const vehicleTypeList = useSelector(
+    (state) => state.getVehicleTypeReducer.vehicleTypeList,
+  );
+
+  const dispatch = useDispatch();
+  useEffect(() => {
+    getVehicleTypeList(true);
+  }, [dispatch]);
+
+  const getVehicleTypeList = (isStartProgress) => {
+    try {
+      dispatch(fetchVehicleTypeListAction.fetchVehicleTypeList(isStartProgress));
+    } catch (err) {
+      console.log(`fetchVehicleTypeListAction.fetchVehicleTypeList.error: ${err}`);
+    }
+  };
 
   // console.log('statusAddAddress', statusAddAddress);
   const [vehicleType, setVehicleType] = useState(vehicleTypeValue);
@@ -101,7 +123,117 @@ const AddVehicleScreen = (props) => {
   const [vehicleTypeFlag, setVehicleTypeFlag] = useState(vehicleTypeFlagValue);
   // const [vehicleType, setVehicleType] = useState('Vehicle Type');
 
-  const onPressRegister = () => {
+  const updateVehicleData = (vehicleDataObject) => {
+    const refreshData = props.navigation.getParam('refreshData');
+    console.log(`vehicleData.id: ${vehicleData.id}`)
+    firestore().collection('vehicle_details').doc(vehicleData.id).update({...vehicleDataObject}).then(() => { 
+      firestore().collection('users').doc(userUID).collection('vehicle_details').doc(vehicleData.id).update({...vehicleDataObject}).then(() => {
+        setIsLoading(false);
+        props.navigation.pop()
+        refreshData()
+      }).catch(error => {
+        setIsLoading(false);
+        console.log(`users.update.error:`,error)
+      });
+    }).catch(error => {
+      setIsLoading(false);
+      console.log(`vehicle_details.update.error:`,error)
+    });
+  }
+
+  const checkVehicleData = () => {
+
+    const refreshData = props.navigation.getParam('refreshData');
+    firestore()
+      .collection('vehicle_details')
+      .where('vehicle_number', '==', vehicleNumber.value)
+      .get()
+      .then(querySnapshot => {
+        console.log('Total users: ', querySnapshot.size);
+        if (querySnapshot.size == 0) {
+          firestore()
+            .collection('vehicle_details')
+            .where('chassis_number', '==', chasisNumber.value)
+            .get()
+            .then(async querySnapshot => {
+              console.log('Total users: ', querySnapshot.size);
+              if (querySnapshot.size == 0) {
+                let vehiclePhotosList = []
+                for (let index = 0; index < vehiclePhotos.value.length; index++) {
+                  let data = vehiclePhotos.value[index];
+                  // console.log(`data: ${JSON.stringify(data)}`)
+                  // dataObject.base64 = firestore.Blob.fromBase64String(data.base64)
+                  let fileURL = ''
+                  if (typeof(data) == 'string') {
+                    fileURL = data
+                  } else {
+                    let ref = await storage().ref(data.fileName)
+                    await ref.putFile(data.uri)
+                    fileURL = await ref.getDownloadURL()
+                  }
+                  console.log(`fileURL:`, fileURL)
+                  // dataObject.base64 = data.base64
+                  // dataObject.type = data.type
+                  vehiclePhotosList.push(fileURL)
+                  console.log(`finish`)
+                }
+                // console.log(`load now`)
+                // return
+                let vehicleDataObject = {
+                  vehicle_type: vehicleType.value,
+                  vehicle_number: vehicleNumber.value,
+                  chassis_number: chasisNumber.value,
+                  comment: comments.value,
+                  // device_details: AppConstants.device_details,
+                  vehicle_photos: vehiclePhotosList,
+                  is_assign: false,
+                  is_verified: 'pending',
+                  status: false,
+                  is_deleted: false
+                }
+                console.log(`vehicleDataObject: ${JSON.stringify(vehicleDataObject)}`)
+                if (isEdit) {
+                  // vehicleDataObject.created_at = new Date()
+                  updateVehicleData(vehicleDataObject)
+                } else {
+                  vehicleDataObject.user_uid = userUID
+                  vehicleDataObject.created_at = new Date()
+                  const ref = firestore().collection('users').doc(userUID).collection('vehicle_details');
+                  ref.add({...vehicleDataObject}).then((response) => {
+                    console.log(`response.user.uid:`, response.id)
+                    const addVehicleDetailsRef = firestore().collection('vehicle_details').doc(response.id);
+                    addVehicleDetailsRef.set({...vehicleDataObject});
+
+                    setIsLoading(false);
+                    props.navigation.pop()
+                    refreshData()
+                  });
+                }
+              } else {
+                querySnapshot.forEach(documentSnapshot => {
+                  console.log('Users: ', documentSnapshot.data());
+                })
+                setChassisNumber({...chasisNumber, error: "Chassis number is already exists!"});
+                setIsLoading(false);
+              }
+            }).catch(error => {
+              setIsLoading(false)
+              console.error(error)
+            });
+        } else {
+          querySnapshot.forEach(documentSnapshot => {
+            console.log('Users: ', documentSnapshot.data());
+          })
+          setVehicleNumber({...vehicleNumber, error: "Vehicle number is already exists!"});
+          setIsLoading(false);
+        }
+      }).catch(error => {
+        setIsLoading(false)
+        console.error(error)
+      });
+  }
+
+  const onPressRegister = async () => {
     const refreshData = props.navigation.getParam('refreshData');
     // console.log(`vehicleType: ${vehicleType}`)
     const vehicleTypeError = vehicleTypeValidator(vehicleType.value);
@@ -119,52 +251,59 @@ const AddVehicleScreen = (props) => {
     } else if (chasisNumberError) {
       setChassisNumber({...chasisNumber, error: chasisNumberError});
       return;
-    } else if (commentsError) {
+    }/*  else if (commentsError) {
       setComments({...comments, error: commentsError});
       return;
-    } else if (vehiclePhotosError) {
+    } */ else if (vehiclePhotosError) {
       setVehiclePhotos({...vehiclePhotos, error: vehiclePhotosError});
       return;
     } else {
       // console.log('Success');
-      let vehiclePhotosList = []
-      for (let index = 0; index < vehiclePhotos.value.length; index++) {
-        let data = vehiclePhotos.value[index];
-        // console.log(`data: ${JSON.stringify(data)}`)
-        let dataObject = {}
-        dataObject.base64 = firestore.Blob.fromBase64String(data.base64)
-        dataObject.type = data.type
-        vehiclePhotosList.push(dataObject)
-      }
       setIsLoading(true)
-      let vehicleDataObject = {
-        vehicle_type: vehicleType.value,
-        vehicle_number: vehicleNumber.value,
-        chassis_number: chasisNumber.value,
-        comment: comments.value,
-        // device_details: AppConstants.device_details,
-        vehicle_photos: vehiclePhotosList,
-        status: 'pending',
-        is_assign: false
-      }
       if (isEdit) {
-        console.log(`vehicleData.id: ${vehicleData.id}`)
-        firestore().collection('users').doc("B4Ti8IgLgpsKZECGqOJ0").collection('vehicle_details').doc(vehicleData.id).update({...vehicleDataObject}).then(() => {
-          setIsLoading(false);
-          props.navigation.pop()
-          refreshData()
-        }).catch(error => {
-          setIsLoading(false);
-          console.log(`vehicle_details.update.error:`,error)
-        });
-        
+        if (vehicleData != undefined && (vehicleData.data.vehicle_number != vehicleNumber.value || vehicleData.data.chassis_number != chasisNumber.value)) {
+          checkVehicleData()
+        } else {
+          let vehiclePhotosList = []
+          for (let index = 0; index < vehiclePhotos.value.length; index++) {
+            let data = vehiclePhotos.value[index];
+            // console.log(`data: ${JSON.stringify(data)}`)
+            // dataObject.base64 = firestore.Blob.fromBase64String(data.base64)
+            let fileURL = ''
+            if (typeof(data) == 'string') {
+              fileURL = data
+            } else {
+              let ref = await storage().ref(data.fileName)
+              await ref.putFile(data.uri)
+              fileURL = await ref.getDownloadURL()
+            }
+            console.log(`fileURL:`, fileURL)
+            // dataObject.base64 = data.base64
+            // dataObject.type = data.type
+            vehiclePhotosList.push(fileURL)
+            console.log(`finish`)
+          }
+          // console.log(`load now`)
+          // return
+          let vehicleDataObject = {
+            vehicle_type: vehicleType.value,
+            vehicle_number: vehicleNumber.value,
+            chassis_number: chasisNumber.value,
+            comment: comments.value,
+            // device_details: AppConstants.device_details,
+            vehicle_photos: vehiclePhotosList,
+            is_assign: false,
+            is_verified: 'pending',
+            status: false,
+            is_deleted: false
+          }
+          console.log(`vehicleDataObject: ${JSON.stringify(vehicleDataObject)}`)
+          updateVehicleData(vehicleDataObject)
+        }
       } else {
-        const ref = firestore().collection('users').doc("B4Ti8IgLgpsKZECGqOJ0").collection('vehicle_details');
-        ref.add({...vehicleDataObject});
-        setIsLoading(false);
-        props.navigation.pop()
-        refreshData()
+        checkVehicleData()
       }
+      
     }
   };
 
@@ -174,7 +313,9 @@ const AddVehicleScreen = (props) => {
   };
 
   const showMenu = () => {
-    _menu.show();
+    if (!isVerified) {
+      _menu.show();
+    }
   };
 
   const hideMenu = (popupName) => {
@@ -184,8 +325,30 @@ const AddVehicleScreen = (props) => {
     setVehicleType({value: popupName, error: ''})
   };
 
+  const setMenuItems = () => {
+    if (!vehicleTypeList) {
+      return
+    }
+    // console.log(`vehicleTypeList:`, vehicleTypeList)
+    let menuItemList = []
+    for (let i = 0; i < vehicleTypeList.length; i++) {
+      let vehicleTypeData = vehicleTypeList[i];
+      menuItemList.push(
+        <MenuItem
+          onPress={() => {
+            hideMenu(vehicleTypeData.data.vehicle_type)
+          }}>
+            {vehicleTypeData.data.vehicle_type}
+        </MenuItem>
+      )
+    }
+    // console.log(`menuItemList:`, menuItemList)
+    return menuItemList
+  }
+
   const saveImageData = (imageType, response) => {
     // imageType is for tap index
+    // console.log(`response:`, response)
     let tVehiclePhotos = [...vehiclePhotos.value]
     if (vehiclePhotos.value.length <= imageType-1) {
       tVehiclePhotos.push(response)
@@ -222,7 +385,7 @@ const AddVehicleScreen = (props) => {
         </View>
       )
     }
-    console.log(`vehiclePhotos.value.length: ${vehiclePhotos.value.length}`)
+    // console.log(`vehiclePhotos.value.length: ${vehiclePhotos.value.length}`)
     if (vehiclePhotos.value.length < 5 && !isVerified) {
       uploadImageViewList.push(
         <UploadImage
@@ -242,153 +405,150 @@ const AddVehicleScreen = (props) => {
   const addVehicleScreenView = () => {
     return (
       <ScrollView style={styles.container}
-      keyboardShouldPersistTaps={'handled'}
-      automaticallyAdjustContentInsets={false}
-      showsVerticalScrollIndicator={false}>
-        <Loader loading={isLoading} />
-        <Menu
-          ref={(ref) => setMenuRef(ref)}
-          button={
-            <View>
-              <TouchableOpacity style={[styles.popupView, {borderColor: vehicleType.error != '' ? Colors.errorColor : Colors.borderColor}]} onPress={showMenu}>
-                <Text
-                  style={
-                    !vehicleTypeFlag
-                      ? styles.popupTextUnSelected
-                      : styles.popupTextSelected
-                  }>
-                  {vehicleType.value == '' ? 'Select vehicle type' : vehicleType.value}
-                </Text>
-              </TouchableOpacity>
-              {vehicleType.error != '' ?
-              <Text style={styles.error}>{vehicleType.error}</Text> : null
-              }
-            </View>
-          }>
-          <View style={styles.contectMenu}>
-            <MenuItem onPress={() => hideMenu('Truck')}>Truck</MenuItem>
-            <MenuItem onPress={() => hideMenu('Truck')}>
-              <Text style={{color: 'white'}}>
-                {
-                  '                                                                             '
+        keyboardShouldPersistTaps={'handled'}
+        // automaticallyAdjustContentInsets={false}
+        showsVerticalScrollIndicator={false}>
+        <>
+          <Loader loading={isLoading} />
+          <Menu
+            style={{ maxHeight: 300, flex: 1 }}
+            ref={(ref) => setMenuRef(ref)}
+            button={
+              <View>
+                <TouchableOpacity 
+                  style={[styles.popupView, {borderColor: vehicleType.error != '' ? Colors.errorColor : Colors.borderColor}]} 
+                  onPress={showMenu}>
+                  <Text
+                    style={
+                      !vehicleTypeFlag
+                        ? styles.popupTextUnSelected
+                        : styles.popupTextSelected
+                    }>
+                    {vehicleType.value == '' ? 'Select vehicle type' : vehicleType.value}
+                  </Text>
+                </TouchableOpacity>
+                {vehicleType.error != '' ?
+                <Text style={styles.error}>{vehicleType.error}</Text> : null
                 }
-              </Text>
-            </MenuItem>
+              </View>
+            }>
+            <ScrollView>
+              {setMenuItems()}
+            </ScrollView>
+          </Menu>
+          <View style={{padding: 16}}>
+            <TextInput
+              //   style={styles.nameInputText}
+              label="Vehicle number"
+              returnKeyType="next"
+              value={vehicleNumber.value}
+              editable={!isVerified}
+              onChangeText={(text) => setVehicleNumber({value: text, error: ''})}
+              error={!!vehicleNumber.error}
+              errorText={vehicleNumber.error}
+              autoCapitalize="none"
+              autoCompleteType="name"
+              textContentType="name"
+              keyboardType="default"
+              ref={(ref) => {
+                this._lastinput = ref;
+              }}
+              onSubmitEditing={() => this._emailinput && this._emailinput.focus()}
+            />
+            <TextInput
+              //   style={styles.emailInputText}
+              label="Chassis number"
+              returnKeyType="next"
+              value={chasisNumber.value}
+              editable={!isVerified}
+              onChangeText={(text) => setChassisNumber({value: text, error: ''})}
+              error={!!chasisNumber.error}
+              errorText={chasisNumber.error}
+              autoCapitalize="none"
+              autoCompleteType="name"
+              textContentType="name"
+              keyboardType="default"
+              ref={(ref) => {
+                this._emailinput = ref;
+              }}
+              onSubmitEditing={() => this._phoneinput && this._phoneinput.focus()}
+            />
+            <TextInput
+              //   style={styles.phoneInputText}
+              label="Comments"
+              returnKeyType="next"
+              value={comments.value}
+              editable={!isVerified}
+              onChangeText={(text) => setComments({value: text, error: ''})}
+              error={!!comments.error}
+              errorText={comments.error}
+              autoCapitalize="none"
+              autoCompleteType="name"
+              textContentType="name"
+              keyboardType="default"
+              ref={(ref) => {
+                this._phoneinput = ref;
+              }}
+              onSubmitEditing={() => Keyboard.dismiss}
+              multiline
+            />
           </View>
-          <MenuItem onPress={() => hideMenu('Tempo')}>Tempo</MenuItem>
-          <MenuItem onPress={() => hideMenu('Eicher')}>Eicher</MenuItem>
-          <MenuItem onPress={() => hideMenu('Utility')}>Utility</MenuItem>
-          <MenuItem onPress={() => hideMenu('Bolero')}>Bolero</MenuItem>
-        </Menu>
-        <View style={{padding: 16}}>
-          <TextInput
-            //   style={styles.nameInputText}
-            label="Vehicle number"
-            returnKeyType="next"
-            value={vehicleNumber.value}
-            onChangeText={(text) => setVehicleNumber({value: text, error: ''})}
-            error={!!vehicleNumber.error}
-            errorText={vehicleNumber.error}
-            autoCapitalize="none"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._lastinput = ref;
-            }}
-            onSubmitEditing={() => this._emailinput && this._emailinput.focus()}
-          />
-          <TextInput
-            //   style={styles.emailInputText}
-            label="Chassis number"
-            returnKeyType="next"
-            value={chasisNumber.value}
-            onChangeText={(text) => setChassisNumber({value: text, error: ''})}
-            error={!!chasisNumber.error}
-            errorText={chasisNumber.error}
-            autoCapitalize="none"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._emailinput = ref;
-            }}
-            onSubmitEditing={() => this._phoneinput && this._phoneinput.focus()}
-          />
-          <TextInput
-            //   style={styles.phoneInputText}
-            label="Comments"
-            returnKeyType="next"
-            value={comments.value}
-            onChangeText={(text) => setComments({value: text, error: ''})}
-            error={!!comments.error}
-            errorText={comments.error}
-            autoCapitalize="none"
-            autoCompleteType="name"
-            textContentType="name"
-            keyboardType="default"
-            ref={(ref) => {
-              this._phoneinput = ref;
-            }}
-            onSubmitEditing={() => Keyboard.dismiss}
-            multiline
-          />
-        </View>
-        <Text
-          style={styles.tilteText}>
-          Vehicle Photo
-        </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {addMultipleUploadImageView()}
-          {/* <UploadImage 
-            titleName="Vehicle Photo" 
-            titleShow={true}
-            imageType={1}
-            saveImageData={saveImageData}
-            data={vehiclePhotos.value[0]}
-            isEdit={isEdit}
-            //isVerified={driverData != undefined && driverData.data.status == AppConstants.driverStatusVerifiedKey}
-          />
-          <UploadImage 
-            titleName="Vehicle Photo" 
-            titleShow={true}
-            imageType={2}
-            saveImageData={saveImageData}
-            data={vehiclePhotos.value.length >= 2 ? vehiclePhotos.value[1] : undefined}
-            isEdit={isEdit}
-          />
-          <UploadImage
-            titleName="Vehicle Photo"
-            titleShow={true}
-            imageType={3}
-            saveImageData={saveImageData}
-            data={vehiclePhotos.value.length >= 3 ? vehiclePhotos.value[2] : undefined}
-            isEdit={isEdit}
-          />
-          <UploadImage 
-            titleName="Vehicle Photo"
-            titleShow={true}
-            imageType={4}
-            saveImageData={saveImageData}
-            data={vehiclePhotos.value.length >= 4 ? vehiclePhotos.value[3] : undefined}
-            isEdit={isEdit}
-          />
-          <UploadImage
-            titleName="Vehicle Photo"
-            titleShow={true}
-            imageType={5}
-            saveImageData={saveImageData}
-            data={vehiclePhotos.value.length >= 5 ? vehiclePhotos.value[4] : undefined}
-            isEdit={isEdit}
-          /> */}
-        </ScrollView>
-        {vehiclePhotos.error != '' ? <Text style={styles.error}>{vehiclePhotos.error}</Text> : null}
-        {isEdit && isVerified ? <Text
-          style={[styles.tilteText, {color: Colors.errorColor}]}>
-          {`You can not change those information, because this vehicle are ${AppConstants.driverStatusVerifiedKey}`}
-        </Text> : <TouchableOpacity style={styles.buttonLogin} onPress={onPressRegister}>
-          <Text style={styles.loginText}>{isEdit ? 'EDIT VEHICLE' : 'ADD VEHICLE'}</Text>
-        </TouchableOpacity>}
+          <Text
+            style={styles.tilteText}>
+            Vehicle Photo
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {addMultipleUploadImageView()}
+            {/* <UploadImage 
+              titleName="Vehicle Photo" 
+              titleShow={true}
+              imageType={1}
+              saveImageData={saveImageData}
+              data={vehiclePhotos.value[0]}
+              isEdit={isEdit}
+              //isVerified={driverData != undefined && driverData.data.is_verified == AppConstants.driverStatusVerifiedKey}
+            />
+            <UploadImage 
+              titleName="Vehicle Photo" 
+              titleShow={true}
+              imageType={2}
+              saveImageData={saveImageData}
+              data={vehiclePhotos.value.length >= 2 ? vehiclePhotos.value[1] : undefined}
+              isEdit={isEdit}
+            />
+            <UploadImage
+              titleName="Vehicle Photo"
+              titleShow={true}
+              imageType={3}
+              saveImageData={saveImageData}
+              data={vehiclePhotos.value.length >= 3 ? vehiclePhotos.value[2] : undefined}
+              isEdit={isEdit}
+            />
+            <UploadImage 
+              titleName="Vehicle Photo"
+              titleShow={true}
+              imageType={4}
+              saveImageData={saveImageData}
+              data={vehiclePhotos.value.length >= 4 ? vehiclePhotos.value[3] : undefined}
+              isEdit={isEdit}
+            />
+            <UploadImage
+              titleName="Vehicle Photo"
+              titleShow={true}
+              imageType={5}
+              saveImageData={saveImageData}
+              data={vehiclePhotos.value.length >= 5 ? vehiclePhotos.value[4] : undefined}
+              isEdit={isEdit}
+            /> */}
+          </ScrollView>
+          {vehiclePhotos.error != '' ? <Text style={styles.error}>{vehiclePhotos.error}</Text> : null}
+          {isEdit && isVerified ? <Text
+            style={[styles.error, {color: Colors.errorColor, marginBottom: 0}]}>
+            {`You can not change those information, because this vehicle are ${AppConstants.driverStatusVerifiedKey}`}
+          </Text> : <TouchableOpacity style={styles.buttonLogin} onPress={onPressRegister}>
+            <Text style={styles.loginText}>{isEdit ? 'EDIT VEHICLE' : 'ADD VEHICLE'}</Text>
+          </TouchableOpacity>}
+        </>
       </ScrollView>
     )
   }

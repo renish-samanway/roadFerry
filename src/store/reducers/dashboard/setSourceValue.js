@@ -4,7 +4,6 @@ const initialState = {
   setSourceTextValue: '',
   setSourceLatitude: '',
   setSourceLongitude: '',
-  sourceAllData: {},
 };
 
 export default (state = initialState, action) => {
@@ -14,7 +13,6 @@ export default (state = initialState, action) => {
         setSourceTextValue: action.setSourceTextValue,
         setSourceLatitude: action.setSourceLatitude,
         setSourceLongitude: action.setSourceLongitude,
-        sourceAllData: action.sourceAllData,
       };
   }
   return state;

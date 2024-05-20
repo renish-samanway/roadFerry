@@ -11,6 +11,8 @@ import {
   Platform,
   PermissionsAndroid,
   ScrollView,
+  ToastAndroid,
+  Linking,
 } from 'react-native';
 import {useSelector, useDispatch, connect} from 'react-redux';
 
@@ -21,43 +23,181 @@ import {RFPercentage, RFValue} from 'react-native-responsive-fontsize';
 // Import the JS file.
 
 import Colors from '../../../helper/extensions/Colors';
-
-import RecentOrder from '../../../../src/components/transpoter/Dashboard/RecentOrder';
-import * as getOrderHistoryDataActions from '../../../../src/store/actions/customer/orderHistory/getOrderHistoryData';
+import RecentOrder from '../../../components/transpoter/Dashboard/RecentOrder';
+import * as getOrderHistoryDataActions from '../../../store/actions/customer/orderHistory/getOrderHistoryData';
+import * as saveNotificationDataActions from '../../../store/actions/dashboard/saveNotificationData';
+import Loader from '../../../components/design/Loader';
+import BottomSheetView from '../../../components/design/BottomSheetView';
+import Modal from 'react-native-modal';
+import Geolocation from '@react-native-community/geolocation';
+import AppConstants from '../../../helper/constants/AppConstants';
+import firestore from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AppPreference from '../../../helper/preference/AppPreference';
+import CText from '../../../common/CText';
 
 // Load the main class.
-
+const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
+let watchId = null;
 
-const TranspoterDashboardScreen = props => {
+const TranspoterDashboardScreen = (props) => {
+  /* useEffect(() => {
+    // subscribe event
+    Linking.addEventListener("url", handleOpenURL);
+    return () => {
+      // unsubscribe event
+      Linking.removeEventListener("url", handleOpenURL);
+    };
+  }, []); */
+
+  const handleOpenURL = (event) => {
+    console.log(`handleOpenURL.event.url: ${event.url}`);
+    const route = event.url.replace(/.*?:\/\//g, '');
+    console.log(`handleOpenURL.route: ${route}`);
+    let splitBySplash = route.split('/');
+    console.log(`splitBySplash: ${JSON.stringify(splitBySplash)}`);
+    for (let i = 0; i < splitBySplash.length; i++) {
+      const element = splitBySplash[i];
+      if (element != 'road_ferry') {
+        console.log(`element: ${element}`);
+        AsyncStorage.getItem(AppPreference.IS_LOGIN).then((valueLogin) => {
+          const isLogin = JSON.parse(valueLogin);
+          console.log(`isLogin: ${isLogin}`);
+          if (isLogin != 1) {
+            props.navigation.navigate({
+              routeName: 'TransporterRegistration',
+              params: {
+                user_id: element,
+                is_from_login: false,
+              },
+            });
+          }
+        });
+      }
+    }
+  };
+
   /* const [pendingCount, setPendingCount] = useState(0);
   const [ongoingCount, setOngoingCount] = useState(0);
   const [acceptedCount, setAcceptedCount] = useState(0);
   const [rejectedCount, setRejectedCount] = useState(0); */
+  const [flagAccept, setFlagAccept] = useState(false);
+  const [popup, setPopup] = useState(false);
+
+  let notificationData = useSelector(
+    (state) => state.saveNotificationReducer.notificationData,
+  );
+
+  useEffect(() => {
+    console.log(`notificationData:`, notificationData.driverId);
+
+    if (Object.keys(notificationData).length != 0) {
+      if (notificationData.type == 'verified') {
+        props.navigation.navigate({
+          routeName: 'DriverlistScreen',
+          params: {
+            isShowBack: true,
+          },
+        });
+      } else {
+        props.navigation.navigate({
+          routeName: 'NotificationScreen',
+        });
+      }
+      dispatch({
+        type: saveNotificationDataActions.SAVE_NOTIFICATION_DATA,
+        notificationData: {},
+      });
+      AsyncStorage.removeItem(AppPreference.NOTIFICATION_DATA);
+    }
+  }, [notificationData]);
+
+  let userUID = useSelector((state) => state.fetchProfileData.userUID);
+  // userUID = "B4Ti8IgLgpsKZECGqOJ0"
+  console.log(`TranspoterDashboardScreen.userUID: ${userUID}`);
+
+  const profileData = useSelector(
+    (state) => state.fetchProfileData.fetchProfileData,
+  );
+
+  const isLoading = useSelector((state) => state.customerOrderData.isLoading);
+  /* const driverList = useSelector(
+    (state) => state.transporterDriverData.driverData,
+  ); */
 
   const pendingData = useSelector(
-    state => state.customerPendingOrderData.customerPendingOrderData,
+    (state) => state.customerPendingOrderData.customerPendingOrderData,
   );
 
   const ongoingData = useSelector(
-    state => state.customerOngoingOrderData.customerOngoingOrderData,
+    (state) => state.customerOngoingOrderData.customerOngoingOrderData,
   );
 
   const completedData = useSelector(
-    state => state.customerCompletedOrderData.customerCompletedOrderData,
+    (state) => state.customerCompletedOrderData.customerCompletedOrderData,
   );
 
   const rejectedData = useSelector(
-    state => state.customerRejectedOrderData.customerRejectedOrderData,
+    (state) => state.customerRejectedOrderData.customerRejectedOrderData,
   );
+
+  useEffect(() => {
+    AsyncStorage.getItem(AppPreference.NOTIFICATION_DATA).then(
+      (notificationData) => {
+        if (notificationData != null) {
+          let notificationDataObj = JSON.parse(notificationData);
+          if (notificationDataObj.type == 'confirm') {
+            openOrderHistoryScreen();
+          } else if (notificationDataObj.type == 'driver_reject') {
+            openOrderHistoryScreen();
+          } else if (notificationDataObj.type == 'request') {
+            openOrderHistoryScreen();
+          } else if (notificationDataObj.type == 'verified') {
+            openDriverListScreen();
+          } else if (notificationDataObj.type == 'rejected') {
+            openDriverListScreen();
+          }
+        }
+      },
+    );
+  }, [pendingData, ongoingData, completedData, rejectedData]);
+
+  const openOrderHistoryScreen = () => {
+    if (!pendingData || !ongoingData || !completedData || !rejectedData) {
+      return;
+    }
+    props.navigation.navigate({
+      routeName: 'ParcelHistoryScreen',
+      params: {
+        historyStatus: 0,
+        pendingData: pendingData,
+        ongoingData: ongoingData,
+        completedData: completedData,
+        rejectedData: rejectedData,
+      },
+    });
+    AsyncStorage.removeItem(AppPreference.NOTIFICATION_DATA);
+  };
+
+  const openDriverListScreen = () => {
+    props.navigation.navigate({
+      routeName: 'DriverlistScreen',
+      params: {
+        isShowBack: true,
+      },
+    });
+    AsyncStorage.removeItem(AppPreference.NOTIFICATION_DATA);
+  };
 
   const dispatch = useDispatch();
   const loadOrderHistoryData = useCallback(async () => {
-    // AsyncStorage.getItem(AppPreference.LOGIN_UID).then((valueUID) => {
-    let valueUID = 'B4Ti8IgLgpsKZECGqOJ0'; //transporter login user id
-    console.log('UID IS : ', valueUID);
+    // AsyncStorage.getItem(AppPreference.LOGIN_UID).then((UID) => {
+    // console.log('UID IS : ', UID);
     try {
-      dispatch(getOrderHistoryDataActions.getCustomerOrderData(valueUID, true));
+      dispatch(
+        getOrderHistoryDataActions.getCustomerOrderData(userUID, true, true),
+      );
     } catch (err) {
       console.log('Error is : ', err);
     }
@@ -65,15 +205,36 @@ const TranspoterDashboardScreen = props => {
   }, [dispatch]);
 
   useEffect(() => {
-    const willFocusSub = props.navigation.addListener(
-      'willFocus',
-      loadOrderHistoryData,
-    );
+    getNotificationCount();
+    const willFocusSub = props.navigation.addListener('willFocus', () => {
+      getNotificationCount();
+      loadOrderHistoryData();
+    });
 
     return () => {
       willFocusSub.remove();
     };
-  }, [loadOrderHistoryData]);
+  }, [getNotificationCount, loadOrderHistoryData]);
+
+  const getNotificationCount = () => {
+    AsyncStorage.getItem(AppPreference.LOGIN_UID).then((userID) => {
+      if (userID != null) {
+        firestore()
+          .collection('notification')
+          .where('user_id', '==', userID)
+          .where('is_read', '==', false)
+          .get()
+          .then((querySnapshot) => {
+            console.log('Total Notification:', querySnapshot.size);
+            props.navigation.setParams({notificationCount: querySnapshot.size});
+          })
+          .catch((error) => {
+            setIsLoginUser(true);
+            console.error(error);
+          });
+      }
+    });
+  };
 
   useEffect(() => {
     loadOrderHistoryData().then(() => {
@@ -84,11 +245,160 @@ const TranspoterDashboardScreen = props => {
     });
   }, [dispatch, loadOrderHistoryData]);
 
-  useEffect(() => {
-    // console.log(`pendingData: ${pendingData}`)
-  });
+  hasLocationPermission = async () => {
+    console.log(`hasLocationPermission`);
+    if (
+      AppConstants.isIOS ||
+      (AppConstants.isAndroid && Platform.Version < 23)
+    ) {
+      return true;
+    }
+    const hasPermission = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    );
 
-  openParcelHistoryScreen = index => {
+    if (hasPermission) {
+      return true;
+    }
+
+    const status = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    );
+
+    if (status === PermissionsAndroid.RESULTS.GRANTED) {
+      return true;
+    }
+
+    if (status === PermissionsAndroid.RESULTS.DENIED) {
+      ToastAndroid.show(
+        'Location permission denied by user.',
+        ToastAndroid.LONG,
+      );
+    } else if (status === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+      ToastAndroid.show(
+        'Location permission revoked by user.',
+        ToastAndroid.LONG,
+      );
+    }
+
+    return false;
+  };
+
+  const updateUserLocation = (coordinates) => {
+    let addressData = profileData.address;
+    // console.log(`addressData:`, addressData)
+    addressData.coordinates = coordinates;
+    firestore()
+      .collection('users')
+      .doc(userUID)
+      .update({coordinates: coordinates})
+      .then(() => {
+        console.log(`users.updated`);
+      })
+      .catch((error) => {
+        console.log(`users.error:`, error);
+      });
+  };
+
+  const getLocationUpdates = async () => {
+    const checkLocationPermission = await hasLocationPermission();
+    if (!checkLocationPermission) {
+      return;
+    }
+    removeLocationUpdates();
+    watchId = Geolocation.watchPosition(
+      (position) => {
+        // console.log(`position:`, position)
+        let latitude = position.coords['latitude'].toFixed(6);
+        let longitude = position.coords['longitude'].toFixed(6);
+        let coordinates = {
+          latitude: parseFloat(latitude),
+          longitude: parseFloat(longitude),
+        };
+        console.log(`coordinates:`, coordinates);
+        updateUserLocation(coordinates);
+      },
+      (error) => {
+        console.log(`getLocationUpdates.error:`, error);
+      },
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 50,
+        interval: 5000,
+        fastestInterval: 2000,
+      },
+    );
+  };
+
+  const removeLocationUpdates = () => {
+    if (watchId !== null) {
+      // console.log(`removeLocationUpdates.this.watchId: ${watchId}`);
+      Geolocation.stopObserving();
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    console.log(`getCurrentLocation`);
+    const checkLocationPermission = await hasLocationPermission();
+    if (!checkLocationPermission) {
+      return;
+    }
+    Geolocation.getCurrentPosition(
+      (position) => {
+        let latitude = position.coords['latitude'].toFixed(6);
+        let longitude = position.coords['longitude'].toFixed(6);
+        // console.log(`getCurrentLocation.latitude: ${typeof(latitude)}`);
+        // console.log(`getCurrentLocation.longitude: ${typeof(longitude)}`);
+        // setGetRegion({
+        //   latitude: parseFloat(latitude),
+        //   longitude: parseFloat(longitude),
+        //   latitudeDelta: LATITUDE_DELTA,
+        //   longitudeDelta: LONGITUDE_DELTA
+        // })
+        let coordinates = {
+          latitude: parseFloat(latitude),
+          longitude: parseFloat(longitude),
+        };
+        console.log(`coordinates: ${JSON.stringify(coordinates)}`);
+        updateUserLocation(coordinates);
+      },
+      (error) => {
+        console.log(`getCurrentLocation.error:`, error);
+      },
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 50,
+        interval: 5000,
+        fastestInterval: 2000,
+      },
+    );
+  };
+
+  useEffect(() => {
+    console.log(`ongoingData.useEffect`);
+    if (ongoingData != undefined && ongoingData.length != 0) {
+      let isGetLocation = false;
+      for (let i = 0; i < ongoingData.length; i++) {
+        let orderData = ongoingData[i];
+        // console.log(`orderData:`, orderData)
+        if (orderData.data.driver_details.user_uid == userUID) {
+          isGetLocation = true;
+          break;
+        }
+      }
+      if (isGetLocation) {
+        getLocationUpdates();
+      } else {
+        removeLocationUpdates();
+      }
+    } else {
+      removeLocationUpdates();
+      getCurrentLocation();
+    }
+  }, [ongoingData]);
+
+  const openParcelHistoryScreen = (index) => {
+    setFlagAccept(false);
     props.navigation.navigate({
       routeName: 'ParcelHistoryScreen',
       params: {
@@ -102,127 +412,219 @@ const TranspoterDashboardScreen = props => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.optionView}>
+    <>
+      <ScrollView style={styles.container}>
+        <View style={styles.optionView}>
+          <View style={styles.firstView}>
+            <TouchableOpacity
+              style={styles.otherRowView}
+              onPress={() => openParcelHistoryScreen(0)}
+            >
+              <View style={styles.subRowView}>
+                <Text style={{...styles.tilteText, color: Colors.tilteText}}>
+                  Pending
+                </Text>
+                <Image
+                  style={styles.optionImage}
+                  source={require('../../../assets/assets/Transpoter/Dashboard/pending.png')}
+                />
+              </View>
+              <Text style={styles.countTitleText}>
+                {pendingData == undefined ? 0 : pendingData.length}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.otherRowView}
+              onPress={() => openParcelHistoryScreen(1)}
+            >
+              <View style={styles.subRowView}>
+                <Text style={{...styles.tilteText, color: Colors.tilteText}}>
+                  Ongoing
+                </Text>
+                <Image
+                  style={styles.optionImage}
+                  source={require('../../../assets/assets/Transpoter/Dashboard/ongoing.png')}
+                />
+              </View>
+              <Text style={styles.countTitleText}>
+                {ongoingData == undefined ? 0 : ongoingData.length}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.firstView}>
+            <TouchableOpacity
+              style={styles.otherRowView}
+              onPress={() => openParcelHistoryScreen(2)}
+            >
+              <View style={styles.subRowView}>
+                <Text style={{...styles.tilteText, color: Colors.tilteText}}>
+                  Completed
+                </Text>
+                <Image
+                  style={styles.optionImage}
+                  source={require('../../../assets/assets/Transpoter/Dashboard/accepted.png')}
+                />
+              </View>
+              <Text style={styles.countTitleText}>
+                {completedData == undefined ? 0 : completedData.length}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.otherRowView}
+              onPress={() => openParcelHistoryScreen(3)}
+            >
+              <View style={styles.subRowView}>
+                <Text style={{...styles.tilteText, color: Colors.tilteText}}>
+                  Rejected
+                </Text>
+                <Image
+                  style={styles.optionImage}
+                  source={require('../../../assets/assets/Transpoter/Dashboard/rejected.png')}
+                />
+              </View>
+              <Text style={styles.countTitleText}>
+                {rejectedData == undefined ? 0 : rejectedData.length}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Text
+          style={{
+            ...styles.countTitleText,
+            fontSize: RFPercentage(2.5),
+            marginTop: 16,
+          }}
+        >
+          Quick access
+        </Text>
         <View style={styles.firstView}>
           <TouchableOpacity
             style={styles.otherRowView}
-            onPress={() => openParcelHistoryScreen(0)}>
-            <View style={styles.subRowView}>
-              <Text style={{...styles.tilteText, color: Colors.tilteText}}>
-                Pending
-              </Text>
+            onPress={() => {
+              setFlagAccept(false);
+              props.navigation.navigate({
+                routeName: 'VehicleListScreen',
+                params: {
+                  isShowBack: true,
+                },
+              });
+            }}
+          >
+            <View style={{...styles.subRowView, marginBottom: 16}}>
               <Image
                 style={styles.optionImage}
-                source={require('../../../assets/assets/Transpoter/Dashboard/pending.png')}
+                source={require('../../../assets/assets/Transpoter/Dashboard/add_vehicle.png')}
               />
+              <Text style={{...styles.tilteText, color: Colors.tilteText}}>
+                Add Vehicle
+              </Text>
             </View>
-            <Text style={styles.countTitleText}>{pendingData.length}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.otherRowView}
-            onPress={() => openParcelHistoryScreen(1)}>
-            <View style={styles.subRowView}>
-              <Text style={{...styles.tilteText, color: Colors.tilteText}}>
-                Ongoing
-              </Text>
+            onPress={() => {
+              /* setPopup(true)
+              return */
+              setFlagAccept(false);
+              props.navigation.navigate({
+                routeName: 'DriverlistScreen',
+                params: {
+                  isShowBack: true,
+                },
+              });
+            }}
+          >
+            <View style={{...styles.subRowView, marginBottom: 16}}>
               <Image
                 style={styles.optionImage}
-                source={require('../../../assets/assets/Transpoter/Dashboard/ongoing.png')}
+                source={require('../../../assets/assets/Transpoter/Dashboard/add_driver.png')}
               />
+              <Text style={{...styles.tilteText, color: Colors.tilteText}}>
+                Add Driver
+              </Text>
             </View>
-            <Text style={styles.countTitleText}>{ongoingData.length}</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.firstView}>
-          <TouchableOpacity
-            style={styles.otherRowView}
-            onPress={() => openParcelHistoryScreen(2)}>
-            <View style={styles.subRowView}>
-              <Text style={{...styles.tilteText, color: Colors.tilteText}}>
-                Accepted
-              </Text>
-              <Image
-                style={styles.optionImage}
-                source={require('../../../assets/assets/Transpoter/Dashboard/accepted.png')}
-              />
-            </View>
-            <Text style={styles.countTitleText}>{completedData.length}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.otherRowView}
-            onPress={() => openParcelHistoryScreen(3)}>
-            <View style={styles.subRowView}>
-              <Text style={{...styles.tilteText, color: Colors.tilteText}}>
-                Rejected
-              </Text>
-              <Image
-                style={styles.optionImage}
-                source={require('../../../assets/assets/Transpoter/Dashboard/rejected.png')}
-              />
-            </View>
-            <Text style={styles.countTitleText}>{rejectedData.length}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-      <Text
-        style={{
-          ...styles.countTitleText,
-          fontSize: RFPercentage(2.5),
-          marginTop: 16,
-        }}>
-        Quick access
-      </Text>
-      <View style={styles.firstView}>
-        <TouchableOpacity
-          style={styles.otherRowView}
-          onPress={() =>
-            props.navigation.navigate({
-              routeName: 'VehicleListScreen',
-            })
-          }>
-          <View style={{...styles.subRowView, marginBottom: 16}}>
-            <Image
-              style={styles.optionImage}
-              source={require('../../../assets/assets/Transpoter/Dashboard/add_vehicle.png')}
-            />
-            <Text style={{...styles.tilteText, color: Colors.tilteText}}>
-              Add Vehicle
+        {pendingData != undefined && pendingData.length > 0 ? (
+          <>
+            <Text
+              style={{
+                ...styles.countTitleText,
+                fontSize: RFPercentage(2.5),
+                marginTop: 16,
+              }}
+            >
+              Recent order
             </Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.otherRowView}
-          onPress={() =>
-            props.navigation.navigate({
-              routeName: 'DriverlistScreen',
-            })
-          }>
-          <View style={{...styles.subRowView, marginBottom: 16}}>
-            <Image
-              style={styles.optionImage}
-              source={require('../../../assets/assets/Transpoter/Dashboard/add_driver.png')}
+            <RecentOrder
+              isDriverDetail={false}
+              isDriverRecentOrder={
+                pendingData[0].data.status === 'pending' ? false : true
+              }
+              data={pendingData[0]}
+              navigation={props.navigation}
+              onStatusChange={() => {
+                loadOrderHistoryData().then(() => {});
+              }}
+              onPressAccept={() => {
+                setFlagAccept(true);
+              }}
+              isOngoingList={
+                ongoingData != undefined && ongoingData.length !== 0
+              }
             />
-            <Text style={{...styles.tilteText, color: Colors.tilteText}}>
-              Add Driver
-            </Text>
+          </>
+        ) : null}
+      </ScrollView>
+      <Loader loading={isLoading} />
+      {flagAccept && pendingData != undefined && pendingData.length > 0 && (
+        <BottomSheetView
+          userUID={userUID}
+          parcelData={pendingData[0]}
+          onPressClose={() => setFlagAccept(false)}
+          onPressAcceptOrder={() => {
+            setFlagAccept(false);
+            setPopup(true);
+          }}
+        />
+      )}
+      {popup && (
+        <Modal isVisible={popup}>
+          <View style={{flex: 1}}>
+            <View style={styles.centeredView}>
+              <View style={styles.popupView}>
+                <Image
+                  style={styles.clickImage}
+                  source={require('../../../assets/assets/PlaceOrder/checkout_click.png')}
+                />
+                <Text style={{...styles.totalAmountText, textAlign: 'center'}}>
+                  Order has been successfully accepted.
+                </Text>
+                <TouchableOpacity
+                  style={styles.homeButtonView}
+                  onPress={() => {
+                    setPopup(false);
+                    loadOrderHistoryData().then(() => {});
+                  }}
+                >
+                  <Text style={styles.placeOrderText}>OKAY</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        </TouchableOpacity>
-      </View>
-      <Text
-        style={{
-          ...styles.countTitleText,
-          fontSize: RFPercentage(2.5),
-          marginTop: 16,
-        }}>
-        Recent order
-      </Text>
-      <RecentOrder />
-    </ScrollView>
+        </Modal>
+      )}
+    </>
   );
 };
 
-TranspoterDashboardScreen.navigationOptions = navigationData => {
+TranspoterDashboardScreen.navigationOptions = (navigationData) => {
+  let notificationCount =
+    navigationData.navigation.getParam('notificationCount');
+  if (notificationCount == undefined || notificationCount == null) {
+    notificationCount = 0;
+  }
+
   return {
     headerShown: true,
     // headerTitle: 'Dashboard',
@@ -244,7 +646,8 @@ TranspoterDashboardScreen.navigationOptions = navigationData => {
         <TouchableOpacity
           onPress={() => {
             navigationData.navigation.toggleDrawer();
-          }}>
+          }}
+        >
           <Image
             style={styles.menuImage}
             source={require('../../../assets/assets/dashboard/ic_menu.png')}
@@ -253,18 +656,56 @@ TranspoterDashboardScreen.navigationOptions = navigationData => {
       </View>
     ),
     headerRight: (
-      <View style={styles.viewHeaderRight}>
+      <View style={{...styles.viewHeaderRight, flexDirection: 'row'}}>
+        <TouchableOpacity
+          style={{marginEnd: 8, justifyContent: 'center', alignItems: 'center'}}
+          onPress={() => {
+            navigationData.navigation.navigate({
+              routeName: 'WalletScreen',
+            });
+          }}
+        >
+          {/* <Image
+            style={styles.menuImage}
+            source={require('../../../assets/assets/dashboard/notification.png')}
+          /> */}
+          <CText>Wallet</CText>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => {
             navigationData.navigation.navigate({
               routeName: 'NotificationScreen',
             });
-          }}>
+          }}
+        >
           <Image
             style={styles.menuImage}
             source={require('../../../assets/assets/dashboard/notification.png')}
           />
         </TouchableOpacity>
+        {notificationCount == 0 ? null : (
+          <View
+            style={{
+              backgroundColor: 'red',
+              paddingHorizontal: 6,
+              paddingVertical: 2,
+              borderRadius: 12,
+              right: 12,
+              top: -4,
+              position: 'absolute',
+            }}
+          >
+            <Text
+              style={{
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: 12,
+              }}
+            >
+              {notificationCount >= 100 ? '+99' : notificationCount}
+            </Text>
+          </View>
+        )}
       </View>
     ),
   };
@@ -286,6 +727,7 @@ const styles = StyleSheet.create({
   },
   viewHeaderRight: {
     paddingRight: 16,
+    // width: 64,
   },
   optionView: {
     backgroundColor: Colors.mainBackgroundColor,
@@ -337,13 +779,39 @@ const styles = StyleSheet.create({
     fontSize: RFPercentage(3),
     color: Colors.titleTextColor,
   },
-  popupView: {
-    marginTop: 8,
-    alignItems: 'flex-start',
+  centeredView: {
+    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clickImage: {
+    marginTop: 16,
+    height: 50,
+    width: 50,
+  },
+  homeButtonView: {
+    margin: 16,
+    fontSize: RFPercentage(2),
+    backgroundColor: Colors.buttonColor,
+    width: 150,
     height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+  },
+  popupView: {
     backgroundColor: Colors.backgroundColor,
-    borderRadius: 5,
+    // height: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: windowWidth - 64,
+    borderRadius: 10,
+  },
+  placeOrderText: {
+    color: Colors.backgroundColor,
+    fontFamily: 'SofiaPro-SemiBold',
+    fontSize: RFPercentage(2),
+    // color: Colors.backgroundColor,
   },
   popupTextUnSelected: {
     marginLeft: 12,
@@ -404,6 +872,11 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     fontSize: RFPercentage(1.7),
     color: Colors.titleTextColor,
+  },
+  totalAmountText: {
+    margin: 16,
+    fontFamily: 'SofiaPro-SemiBold',
+    fontSize: RFPercentage(2),
   },
 });
 

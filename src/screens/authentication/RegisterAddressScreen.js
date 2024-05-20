@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -39,27 +39,18 @@ import {
 import Loader from '../../components/design/Loader';
 import AppConstants from '../../helper/constants/AppConstants';
 import AppPreference from '../../helper/preference/AppPreference';
-import * as fetchProfileDataActions from '../../store/actions/customer/profile/fetchProfileData';
-import { useDispatch } from 'react-redux';
-import { setIsLoginUser } from '../../navigation/MainNavigation';
-import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
 
 // Load the main class.
 
 const RegisterAddressScreen = (props) => {
-  const ref = useRef();
-
-  const [flatName, setFlatName] = useState({value: '', error: ''});
+  const [flatname, setFlatName] = useState({value: '', error: ''});
   const [area, setArea] = useState({value: '', error: ''});
   const [city, setCity] = useState({value: '', error: ''});
   const [state, setState] = useState({value: '', error: ''});
   const [country, setCountry] = useState({value: '', error: ''});
   const [pincode, setPincode] = useState({value: '', error: ''});
   const [isLoading, setIsLoading] = useState(false);
-
-  const dispatch = useDispatch();
-
-  /* const [addressDict, setAddressDict] = useState({
+  const [addressDict, setAddressDict] = useState({
     flatNumber: '',
     area: '',
     city: '',
@@ -68,7 +59,7 @@ const RegisterAddressScreen = (props) => {
     pincode: '',
     latitude: '',
     longitude: '',
-  }); */
+  });
   const onPressRegister = () => {
     const firstName = props.navigation.getParam('firstName');
     const lastName = props.navigation.getParam('lastName');
@@ -78,7 +69,7 @@ const RegisterAddressScreen = (props) => {
     const latitude = props.navigation.getParam('latitude');
     const longitude = props.navigation.getParam('longitude');
 
-    const flatNameError = flatNameValidator(ref ? ref.current?.getAddressText() : flatName.value);
+    const flatNameError = flatNameValidator(flatname.value);
     const areaError = areaValidator(area.value);
     const cityError = cityValidator(city.value);
     const stateError = stateValidator(state.value);
@@ -86,7 +77,7 @@ const RegisterAddressScreen = (props) => {
     const pincodeError = pinCodeValidator(pincode.value);
 
     if (flatNameError) {
-      setFlatName({...flatName, error: flatNameError});
+      setFlatName({...flatname, error: flatNameError});
       return;
     } else if (areaError) {
       setArea({...area, error: areaError});
@@ -104,242 +95,70 @@ const RegisterAddressScreen = (props) => {
       setPincode({...pincode, error: pincodeError});
       return;
     } else {
-      setIsLoading(true);
-      let phoneNumberWithCode = `${AppConstants.country_code} ${phone}`
-      console.log(`phoneNumberWithCode: ${phoneNumberWithCode}`)
-      auth()
-      .signInWithPhoneNumber(phoneNumberWithCode)
-      .then(confirmResult => {
-        // console.log(`confirmResult:`, confirmResult)
-        console.log(`confirmResult: ${JSON.stringify(confirmResult)}`)
-        setIsLoading(false);
-        
-        let addressData = {}
-        addressData.flat_number = flatName.value
-        addressData.area = area.value
-        addressData.city = city.value
-        addressData.state = state.value
-        addressData.country = country.value
-        addressData.pincode = pincode.value
-        addressData.latitude = latitude
-        addressData.longitude = longitude
-
-        let registerData = {
-          // access_token: token,
-          // fcm_token: fcmToken,
-          first_name: firstName,
-          last_name: lastName,
-          email: email,
-          phone_number: phone,
-          country_code: AppConstants.country_code,
-          latitude: latitude,
-          longitude: longitude,
-          user_type: 'customer',
-          // device_details: AppConstants.device_details,
-          address: addressData,
-          reason: '',
-          status: true,
-          is_deleted: false,
-          created_at: new Date()
-        }
-
-        props.navigation.navigate({
-          routeName: 'VerificationScreen',
-          params: {
-            isLogin: false,
-            phoneNumber: phone,
-            confirm: confirmResult,
-            registerData: registerData
-          },
-        });
-      })
-      .catch(error => {
-        setIsLoading(false);
-        alert(error.message)
-        console.log(error)
-      });
-      
-      return
-      let addressData = {}
-      addressData.flat_number = flatName.value
-      addressData.area = area.value
-      addressData.city = city.value
-      addressData.state = state.value
-      addressData.country = country.value
-      addressData.pincode = pincode.value
-      addressData.latitude = latitude
-      addressData.longitude = longitude
-      // setAddressDict(addressData);
+      //   setAddressDict.flatNumber(flatname);
+      //   setAddressDict.area(area);
+      //   setAddressDict.city(city);
+      //   setAddressDict.state(state);
+      //   setAddressDict.country(country);
+      //   setAddressDict.pincode(pincode);
+      //   setAddressDict.latitude(latitude);
+      //   setAddressDict.longitude(longitude);
 
       setIsLoading(true);
       auth()
         .createUserWithEmailAndPassword(email, password)
         .then((response) => {
-          // console.log('Email response is : ', response.user.uid);
-          // console.log('rootRef is : ', response.user.uid);
-          
-          response.user.getIdToken(true).then(token => {
-            AsyncStorage.getItem(AppPreference.FCM_TOKEN).then((fcmToken) => {
-              if (fcmToken == null) {
-                setIsLoading(false);
-                console.log(`AppPreference.FCM_TOKEN.null`)
-              } else {
-                console.log(`AppPreference.FCM_TOKEN:`, fcmToken)
-
-                let registerData = {
-                  access_token: token,
-                  fcm_token: fcmToken,
-                  first_name: firstName,
-                  last_name: lastName,
-                  email: email,
-                  phone_number: phone,
-                  latitude: latitude,
-                  longitude: longitude,
-                  user_type: 'customer',
-                  device_details: AppConstants.device_details,
-                  address: addressData,
-                  reason: '',
-                  status: true,
-                  is_deleted: false,
-                  created_at: new Date()
-                }
-
-                firestore()
-                .collection('users')
-                .doc(response.user.uid)
-                .set(registerData)
-                .then(querySnapshot => {
-                  // console.log('Total users: ', querySnapshot.size);
-                  setIsLoading(false);
-                  AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
-                  AsyncStorage.setItem(AppPreference.LOGIN_TOKEN,token);
-                  AsyncStorage.setItem(AppPreference.LOGIN_UID, response.user.uid).then(
-                    () => {
-                      AsyncStorage.setItem(
-                        AppPreference.LOGIN_USER_DATA,
-                        JSON.stringify(registerData),
-                      ).then(() => {
-                        setIsLoginUser(true)
-                        dispatch({
-                          type: fetchProfileDataActions.FETCH_PROFILE_DATA,
-                          fetchProfileData: registerData,
-                          userUID: response.user.uid
-                        });
-                        props.navigation.navigate({
-                          routeName: 'Dashboard',
-                        });
-                      })
-                    },
-                  );
-                }).catch(error => {
-                  setIsLoading(false);
-                  console.error(error)
-                });
-              }
-            });
-            
-          })
-        }).catch((error) => {
+          console.log('Email response is : ', response.user.uid);
+          const ref = firestore().collection('users').doc(response.user.uid);
+          console.log('rootRef is : ', response.user.uid);
+          ref.set({
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            phone_number: phone,
+            latitude: latitude,
+            longitude: longitude,
+            user_type: 'Customer',
+            device_details: AppConstants.device_details,
+            address: addressDict,
+          });
+          setIsLoading(false);
+          AsyncStorage.setItem(AppPreference.IS_LOGIN, '1');
+          AsyncStorage.setItem(AppPreference.LOGIN_UID, response.user.uid).then(
+            () => {
+              props.navigation.navigate({
+                routeName: 'Dashboard',
+              });
+            },
+          );
+        })
+        .catch((error) => {
           setIsLoading(false);
           console.log('Error is : ', error.code);
           // console.log('Please login with Email with password account');
-          setTimeout(() => {
-            Alert.alert(
-              'Alert',
-              'Email id already exist. Please login',
-              [{text: 'OK', onPress: () => console.log('OK Pressed')}],
-              {cancelable: false},
-            );
-          }, 500)
+          Alert.alert(
+            'Alert',
+            'Email id already exist.Please login',
+            [{text: 'OK', onPress: () => console.log('OK Pressed')}],
+            {cancelable: false},
+          );
         });
     }
   };
 
-  const onPressAddressItem = (data, details) => {
-    console.log(`data: ${JSON.stringify(data)}`)
-    console.log(`details: ${JSON.stringify(details)}`)
-    var componentList = details.adr_address.split(', ');
-
-    let flatDetails = ''  // ? extended-address
-    let area = ''         // ? street-address
-    let city = ''         // ? locality
-    let state = ''        // ? region
-    let country = ''      // ? country-name
-    let pincode = ''      // ? postal-code
-
-    for (const component of details.address_components) {
-      const componentType = component.types[0];
-  
-      switch (componentType) {
-        case "street_number": {
-          flatDetails = `${component.long_name}`;
-          break;
-        }
-  
-        /* case "route": {
-          flatDetails += component.short_name;
-          break;
-        } */
-
-        case "sublocality_level_2": {
-          flatDetails = flatDetails === '' ? '' : `${flatDetails}, ` + `${component.long_name}`;
-          break;
-        }
-  
-        case "route": {
-          area += component.long_name;
-          break;
-        }
-  
-        case "postal_code_suffix": {
-          pincode = `${pincode}-${component.long_name}`;
-          break;
-        }
-
-        case "locality": {
-          city = component.long_name;
-          break;
-        }
-
-        case "administrative_area_level_1": {
-          state = component.short_name;
-          break;
-        }
-
-        case "country": {
-          country = component.long_name;
-          break;
-        }
-
-        case "postal_code": {
-          pincode = `${component.long_name}${pincode}`;
-          break;
-        }
-      }
-    }
-
-    setFlatName({value: flatDetails, error: ''})
-    setArea({value: area, error: ''})
-    setCity({value: city, error: ''})
-    setState({value: state, error: ''})
-    setCountry({value: country, error: ''})
-    setPincode({value: pincode, error: ''})
-
-    if (ref) {
-      ref.current?.setAddressText(flatDetails);
-    }
-  }
-
-  const setRegisterAddressView = () => {
-    return (
-      <>
-        <StatusBar
-          backgroundColor={Colors.mainBackgroundColor}
-          barStyle="dark-content"
-        />
-        <SafeAreaView
-          style={{flex: 1, backgroundColor: Colors.mainBackgroundColor}}>
-          <ScrollView style={styles.container} keyboardShouldPersistTaps='always'>
+  return (
+    <>
+      <StatusBar
+        backgroundColor={Colors.mainBackgroundColor}
+        barStyle="dark-content"
+      />
+      <SafeAreaView
+        style={{flex: 0, backgroundColor: Colors.mainBackgroundColor}}
+      />
+      <SafeAreaView
+        style={{flex: 1, backgroundColor: Colors.mainBackgroundColor}}>
+        <ScrollView style={styles.container}>
+          <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={30}>
             <Loader loading={isLoading} />
             <TouchableOpacity
               onPress={() =>
@@ -364,71 +183,18 @@ const RegisterAddressScreen = (props) => {
               </View>
             </View>
             <View style={styles.lineViewText}>
-              <Text style={styles.registerText}>General details</Text>
-              <Text style={styles.haveAnAccountText}>Address</Text>
+              <Text style={styles.haveAnAccountText}>General details</Text>
+              <Text style={styles.registerText}>Address</Text>
             </View>
             <View style={{padding: 16}}>
-              <ScrollView 
-                horizontal={true}
-                style={{ flex: 1, marginBottom: 8 }}
-                contentContainerStyle={{ flex: 1 }}
-                keyboardShouldPersistTaps='always'
-              >
-                <GooglePlacesAutocomplete
-                  ref={ref}
-                  placeholder={"Flat name or Number"}
-                  minLength={3}
-                  returnKeyType={'next'}
-                  listViewDisplayed="auto"
-                  fetchDetails={true}
-                  keyboardShouldPersistTaps='always'
-                  // renderDescription={(row) => row.description}
-                  onPress={onPressAddressItem}
-                  onNotFound={() => {
-                    console.log(`onNotFound`)
-                  }}
-                  query={{
-                    key: AppConstants.google_place_api_key,
-                    language: 'en',
-                    components: 'country:in'
-                    // types: '(cities)',
-                  }}
-                  enablePoweredByContainer={false}
-                  /* GooglePlacesDetailsQuery={{
-                    // fields: ['formatted_address', 'geometry'],
-                    fields: 'geometry',
-                  }} */
-                  styles={{
-                    textInputContainer: {
-                      height: 60,
-                      borderRadius: 4
-                    },
-                    textInput: {
-                      height: 60,
-                      color: Colors.textColor,
-                      fontSize: RFPercentage(2.4),
-                      // fontFamily: 'SofiaPro-Regular',
-                      backgroundColor: Colors.surfaceColor,
-                      borderRadius: 4,
-                      borderWidth: 1
-                    },
-                    /* predefinedPlacesDescription: {
-                      color: '#1faadb',
-                    } */
-                  }}
-                />
-              </ScrollView>
-              {flatName.error == '' ? null : (
-                <Text style={styles.error}>{flatName.error}</Text>
-              )}
-              {/* <TextInput
+              <TextInput
                 //   style={styles.nameInputText}
                 label="Flat name or Number"
                 returnKeyType="next"
-                value={flatName.value}
+                value={flatname.value}
                 onChangeText={(text) => setFlatName({value: text, error: ''})}
-                error={!!flatName.error}
-                errorText={flatName.error}
+                error={!!flatname.error}
+                errorText={flatname.error}
                 autoCapitalize="none"
                 autoCompleteType="name"
                 textContentType="name"
@@ -439,7 +205,7 @@ const RegisterAddressScreen = (props) => {
                 onSubmitEditing={() =>
                   this._areainput && this._areainput.focus()
                 }
-              /> */}
+              />
               <TextInput
                 //   style={styles.nameInputText}
                 label="Area"
@@ -527,7 +293,7 @@ const RegisterAddressScreen = (props) => {
                 autoCapitalize="none"
                 autoCompleteType="name"
                 textContentType="name"
-                keyboardType="number-pad"
+                keyboardType="default"
                 ref={(ref) => {
                   this._pincodeinput = ref;
                 }}
@@ -547,21 +313,10 @@ const RegisterAddressScreen = (props) => {
               </Text>
               <Text style={styles.haveAnAccountText}> Login</Text>
             </TouchableOpacity>
-          </ScrollView>
-        </SafeAreaView>
-      </>
-    );
-  }
-
-  return AppConstants.isAndroid ? (
-    <View style={{ flex: 1 }}>{setRegisterAddressView()}</View>
-  ) : (
-    <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: '#fff' }}
-        behavior="padding"
-        enabled>
-        {setRegisterAddressView()}
-    </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 };
 
@@ -668,13 +423,6 @@ const styles = StyleSheet.create({
   socialImage: {
     height: 60,
     width: 60,
-  },
-  error: {
-    fontSize: RFPercentage(2),
-    // fontFamily: 'Roboto-Regular',
-    color: Colors.errorColor,
-    paddingHorizontal: 8,
-    paddingTop: 8,
   },
   // loginText: {
   //   color: Colors.backgroundColor,

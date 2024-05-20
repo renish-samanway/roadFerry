@@ -11,7 +11,6 @@ import {
   ScrollView,
   Keyboard,
   KeyboardAvoidingView,
-  AsyncStorage,
   Alert,
   Platform,
   PermissionsAndroid,
@@ -48,11 +47,25 @@ import AppPreference from '../../../helper/preference/AppPreference';
 import * as addAddressActions from '../../../store/actions/addAddress/addAddress';
 import * as dropAddAddressActions from '../../../store/actions/addAddress/dropAddAddress';
 import UploadImage from '../../../components/transpoter/Drivers/UploadImage';
+import storage from '@react-native-firebase/storage'
+import * as fetchProfileDataActions from '../../../store/actions/customer/profile/fetchProfileData';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import NotificationCall from '../../../helper/NotificationCall';
 
 // Load the main class.
 const windowWidth = Dimensions.get('window').width;
 
 const AddDriverUploadScreen = (props) => {
+  const profileData = useSelector(
+    (state) => state.fetchProfileData.fetchProfileData,
+  );
+
+  let userUID = useSelector(
+    (state) => state.fetchProfileData.userUID,
+  );
+  // userUID = "B4Ti8IgLgpsKZECGqOJ0"
+  console.log(`AddDriverUploadScreen.userUID: ${userUID}`)
+
   const statusAddAddress = props.navigation.getParam('statusAddAddress');
   // console.log('statusAddAddress', statusAddAddress);
   let isEdit = props.navigation.getParam('isEdit');
@@ -65,25 +78,43 @@ const AddDriverUploadScreen = (props) => {
     driverData = props.navigation.getParam('driverData');
   }
 
+  const dispatch = useDispatch();
+  const fetchProfileData = useCallback(async () => {
+    try {
+      dispatch(fetchProfileDataActions.fetchProfileData(userUID));
+    } catch (err) {
+      console.log('Error is : ', err);
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchProfileData().then(() => {
+    });
+  }, [dispatch, fetchProfileData]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [popup, setPopup] = useState(false);
   
-  const convertData = (imageData) => {
+  /* const convertData = (imageData) => {
     let base64Data = {}
-    base64Data.base64 = imageData.base64.toBase64()
+    // base64Data.base64 = imageData.base64.toBase64()
+    base64Data.base64 = imageData.base64
     base64Data.type = imageData.type
     return base64Data
-  }
+  } */
 
   let addressProofValue = {data: '', error: ''}
   let identityProofValue = {data: '', error: ''}
   let driverPhotoValue = {data: '', error: ''}
   if (driverData != undefined) {
     console.log(`driverData.id: ${driverData.id}`)
-    let isVerified = driverData.data.status == AppConstants.driverStatusVerifiedKey
-    addressProofValue = {data: convertData(driverData.data.address_proof), error: isVerified ? `You can not change address proof, because this driver are ${AppConstants.driverStatusVerifiedKey}` : ''}
-    identityProofValue = {data: convertData(driverData.data.identity_proof), error: isVerified ? `You can not change identity proof, because this driver are ${AppConstants.driverStatusVerifiedKey}` : ''}
-    driverPhotoValue = {data: convertData(driverData.data.driver_photo), error: ''}
+    let isVerified = driverData.data.is_verified == AppConstants.driverStatusVerifiedKey
+    // addressProofValue = {data: convertData(driverData.data.address_proof), error: isVerified ? `You can not change address proof, because this driver are ${AppConstants.driverStatusVerifiedKey}` : ''}
+    // identityProofValue = {data: convertData(driverData.data.identity_proof), error: isVerified ? `You can not change identity proof, because this driver are ${AppConstants.driverStatusVerifiedKey}` : ''}
+    // driverPhotoValue = {data: convertData(driverData.data.driver_photo), error: ''}
+    addressProofValue = {data: driverData.data.address_proof, error: isVerified ? `You can not change address proof, because this driver are ${AppConstants.driverStatusVerifiedKey}` : ''}
+    identityProofValue = {data: driverData.data.identity_proof, error: isVerified ? `You can not change identity proof, because this driver are ${AppConstants.driverStatusVerifiedKey}` : ''}
+    driverPhotoValue = {data: driverData.data.driver_photo, error: ''}
   }
   
   const [addressProof, setAddressProof] = useState(addressProofValue);
@@ -96,9 +127,7 @@ const AddDriverUploadScreen = (props) => {
   //     (state) => state.pickupAddressData.pickupAddressData,
   //   );
 
-  const dispatch = useDispatch();
-
-  const onPressRegister = () => {
+  const onPressRegister = async () => {
     const firstName = props.navigation.getParam('firstName');
     const lastName = props.navigation.getParam('lastName');
     const email = props.navigation.getParam('email');
@@ -124,8 +153,41 @@ const AddDriverUploadScreen = (props) => {
       return;
     } else {
       // return
+      setIsLoading(true);
+
+      let addressProofURL = ''
+      if (typeof(addressProof.data) === 'string') {
+        addressProofURL = addressProof.data
+      } else {
+        // console.log(`addressProof.data:`, addressProof.data)
+        let ref = await storage().ref(addressProof.data.fileName)
+        await ref.putFile(addressProof.data.uri)
+        addressProofURL = await ref.getDownloadURL()
+        console.log(`addressProofURL:`, addressProofURL)
+      }
+
+      let identityProofURL = ''
+      if (typeof(identityProof.data) === 'string') {
+        identityProofURL = identityProof.data
+      } else {
+        let ref = await storage().ref(identityProof.data.fileName)
+        await ref.putFile(identityProof.data.uri)
+        identityProofURL = await ref.getDownloadURL()
+        console.log(`identityProofURL:`, identityProofURL)
+      }
+
+      let driverPhotoURL = ''
+      if (typeof(driverPhoto.data) === 'string') {
+        driverPhotoURL = driverPhoto.data
+      } else {
+        let ref = await storage().ref(driverPhoto.data.fileName)
+        await ref.putFile(driverPhoto.data.uri)
+        driverPhotoURL = await ref.getDownloadURL()
+        console.log(`driverPhotoURL:`, driverPhotoURL)
+      }
+
+      // return
       if (isEdit) {
-        setIsLoading(true);
         let editDriverData = {
           first_name: firstName,
           last_name: lastName,
@@ -133,32 +195,41 @@ const AddDriverUploadScreen = (props) => {
           phone_number: phone,
           age: age,
           temp_password: driverData.data.temp_password,
-          address_proof: {
-            base64: firestore.Blob.fromBase64String(addressProof.data.base64),
+          /* address_proof: {
+            // base64: firestore.Blob.fromBase64String(addressProof.data.base64),
+            base64: addressProof.data.base64,
             type: addressProof.data.type
-          },
-          identity_proof: {
-            base64: firestore.Blob.fromBase64String(identityProof.data.base64),
+          }, */
+          address_proof: addressProofURL,
+          /* identity_proof: {
+            // base64: firestore.Blob.fromBase64String(identityProof.data.base64),
+            base64: identityProof.data.base64,
             type: identityProof.data.type
-          },
-          driver_photo: {
-            base64: firestore.Blob.fromBase64String(driverPhoto.data.base64),
+          }, */
+          identity_proof: identityProofURL,
+          /* driver_photo: {
+            // base64: firestore.Blob.fromBase64String(driverPhoto.data.base64),
+            base64: driverPhoto.data.base64,
             type: driverPhoto.data.type
-          }, 
-          status: driverData.data.status,
-          is_assign: driverData.data.is_assign
+          }, */
+          driver_photo: driverPhotoURL,
+          is_assign: driverData.data.is_assign,
+          is_verified: driverData.data.is_verified,
+          status: false,
+          is_deleted: false
         }
-        firestore().collection('users').doc(driverData.data.user_uid).set({...editDriverData, user_type: 'driver'})
+        console.log(`driverData.id:`, driverData.id)
+        firestore().collection('users').doc(driverData.data.user_uid).update({...editDriverData, user_type: 'driver', transporter_uid: userUID, driver_uid: driverData.id})
         firestore()
           .collection('users')
-          .doc("B4Ti8IgLgpsKZECGqOJ0")
+          .doc(userUID)
           .collection('driver_details')
           .doc(driverData.id).update({...editDriverData, user_uid: driverData.data.user_uid});
         setIsLoading(false);
+
         props.navigation.pop()
         goBack()
       } else {
-        setIsLoading(true);
         auth()
           .createUserWithEmailAndPassword(email, password)
           .then((response) => {
@@ -171,26 +242,47 @@ const AddDriverUploadScreen = (props) => {
               age: age,
               temp_password: password,
               // device_details: AppConstants.device_details,
-              address_proof: {
-                base64: firestore.Blob.fromBase64String(addressProof.data.base64),
+              /* address_proof: {
+                // base64: firestore.Blob.fromBase64String(addressProof.data.base64),
+                base64: addressProof.data.base64,
                 type: addressProof.data.type
-              },
-              identity_proof: {
-                base64: firestore.Blob.fromBase64String(identityProof.data.base64),
+              }, */
+              address_proof: addressProofURL,
+              /* identity_proof: {
+                // base64: firestore.Blob.fromBase64String(identityProof.data.base64),
+                base64: identityProof.data.base64,
                 type: identityProof.data.type
-              },
-              driver_photo: {
-                base64: firestore.Blob.fromBase64String(driverPhoto.data.base64),
+              }, */
+              identity_proof: identityProofURL,
+              /* driver_photo: {
+                // base64: firestore.Blob.fromBase64String(driverPhoto.data.base64),
+                base64: driverPhoto.data.base64,
                 type: driverPhoto.data.type
-              },
-              status: 'pending',
-              is_assign: false
+              }, */
+              driver_photo: driverPhotoURL,
+              is_assign: false,
+              is_verified: 'pending',
+              status: false,
+              is_deleted: false,
+              created_at: new Date()
             }
             // console.log(`driverData.fromBase64String: ${JSON.stringify(driverData.driver_photo)}`)
             // console.log(`driverData.toBase64: ${driverData.driver_photo.toBase64()}`)
             // return
-            firestore().collection('users').doc(response.user.uid).set({...driverData, user_type: 'driver'})
-            const ref = firestore().collection('users').doc("B4Ti8IgLgpsKZECGqOJ0").collection('driver_details');
+            let driverCount = profileData.driver_count
+            if (!driverCount) {
+              driverCount = 0
+            }
+            firestore()
+              .collection('users')
+              .doc(userUID)
+              .update({ driver_count: driverCount+1 })
+
+            firestore()
+            .collection('users')
+            .doc(response.user.uid)
+            .set({...driverData, user_type: 'driver', transporter_uid: userUID})
+            const ref = firestore().collection('users').doc(userUID).collection('driver_details');
             ref.add({...driverData, user_uid: response.user.uid});
             setIsLoading(false);
             props.navigation.pop()
@@ -216,8 +308,8 @@ const AddDriverUploadScreen = (props) => {
 
   const saveImageData = (imageType, response) => {
     //imageType => 1 for Address Proof, 2 for Identity Proof, 3 for Driver Photo
-    console.log(`imageType: ${imageType}`);
-    console.log(`response: ${JSON.stringify(response)}`);
+    // console.log(`imageType: ${imageType}`);
+    // console.log(`response: ${JSON.stringify(response)}`);
     if (imageType == 1) {
       setAddressProof({data: response, error: ''});
     } else if (imageType == 2) {
@@ -229,7 +321,7 @@ const AddDriverUploadScreen = (props) => {
 
   return (
     <ScrollView style={styles.container}>
-      <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={Platform.OS == "android" ? 0 : 30}>
+      <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={30}>
         <Loader loading={isLoading} />
         <View style={styles.lineView}>
           <View style={styles.inActiveDotView}>
@@ -252,7 +344,7 @@ const AddDriverUploadScreen = (props) => {
           saveImageData={saveImageData}
           data={addressProof.data}
           isEdit={isEdit}
-          isVerified={driverData != undefined && driverData.data.status == AppConstants.driverStatusVerifiedKey}
+          isVerified={driverData != undefined && driverData.data.is_verified == AppConstants.driverStatusVerifiedKey}
         />
         <UploadImage
           titleName="Identity Proof (License)"
@@ -261,7 +353,7 @@ const AddDriverUploadScreen = (props) => {
           saveImageData={saveImageData}
           data={identityProof.data}
           isEdit={isEdit}
-          isVerified={driverData != undefined && driverData.data.status == AppConstants.driverStatusVerifiedKey}
+          isVerified={driverData != undefined && driverData.data.is_verified == AppConstants.driverStatusVerifiedKey}
         />
         <UploadImage
           titleName="Driver Photo"
@@ -270,7 +362,7 @@ const AddDriverUploadScreen = (props) => {
           saveImageData={saveImageData}
           data={driverPhoto.data}
           isEdit={isEdit}
-          isVerified={driverData != undefined && driverData.data.status == AppConstants.driverStatusVerifiedKey}
+          isVerified={driverData != undefined && driverData.data.is_verified == AppConstants.driverStatusVerifiedKey}
         />
         <TouchableOpacity style={styles.buttonLogin} onPress={onPressRegister}>
           <Text style={styles.loginText}>{isEdit ? 'EDIT DRIVER' : 'ADD DRIVER'}</Text>

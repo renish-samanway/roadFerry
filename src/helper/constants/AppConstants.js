@@ -2,9 +2,7 @@ import DeviceInfo from 'react-native-device-info';
 import {Platform} from 'react-native';
 
 // let BASE_URL = 'https://logistics-dev-api.herokuapp.com/api/'
-// let BASE_URL = 'http://192.168.1.2:3000/api/'
 let BASE_URL = 'https://api.roadferry.in/api/'
-// let BASE_URL = 'http://localhost:3000/api/'
 
 export default {
   SYSLOCALTIME: 'system_local_time',
@@ -18,7 +16,8 @@ export default {
   isIOS: Platform.OS === 'ios',
   driverStatusVerifiedKey: 'verified',
   vehicleStatusVerifiedKey: 'verified',
-  SEND_NOTIFICATION: `${BASE_URL}sendNotification`,
+  country_code: "+91",
+  opacityLevel: 0.6,
   // ! Key 1
   // ? Account: unknown
   // ? Project: unknown
@@ -34,9 +33,7 @@ export default {
   // ? Project: Road Ferry
   // ? Link: https://console.cloud.google.com/google/maps-apis/credentials?authuser=3&project=road-ferry-338510&supportedpurview=project
   google_place_api_key: 'AIzaSyCItzj5w3MbKo3zTyY0i4K6fPvbUYGNN-4',  
-  country_code: "+91",
-  opacityLevel: 0.6,
-
+  transporterRegisterLink: "https://api.roadferry.in/register",
   device_details: {
     SYSLOCALTIME: new Date().toLocaleString(),
     TIMEZONE: 'EST',
@@ -46,4 +43,5 @@ export default {
     DEVICETYPE: Platform.OS === 'ios' ? '2' : '1',
     DEVICEMMODEL: DeviceInfo.getModel(),
   },
+  SEND_NOTIFICATION: `${BASE_URL}sendNotification`
 };

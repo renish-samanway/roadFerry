@@ -55,18 +55,15 @@ const PlaceOrderTextInput = (props) => {
   };
 
   const handleConfirm = (date) => {
-    var formattedDate = format(date, 'dd-MMM-yyyy HH:MM:SS');
+    var formattedDate = format(date, 'dd-MMM-yyyy HH:mm');
     setIsDateSelected(formattedDate);
     hideDatePicker();
   };
 
+  const [notifyImage, setNotifyImage] = useState(false);
   const onPressNotify = () => {
-    if(props.setNotifyRecipient) props.setNotifyRecipient(!props.notifyRecipient);
+    setNotifyImage(!notifyImage);
   };
-
-  const onPressEndTripNotify = () => {
-    if(props.setSendEndTripOtpToReceiver) props.setSendEndTripOtpToReceiver(!props.sendEndTripOtpToReceiver);
-  }
 
   return (
     <View>
@@ -136,7 +133,7 @@ const PlaceOrderTextInput = (props) => {
           />
           <TextInputParcel
             // style={styles.weightInputText}
-            placeholder="Weight(Tons)"
+            placeholder="Weight(KG)"
             returnKeyType="next"
             value={
               isPickupPoint ? props.pickupWeightValue : props.dropWeightValue
@@ -159,7 +156,7 @@ const PlaceOrderTextInput = (props) => {
             textContentType="name"
             keyboardType="number-pad"
             ref={(ref) => {
-              // this._weightinput = ref;
+              this._weightinput = ref;
             }}
             onSubmitEditing={() =>
               this._parcelValueinput && this._parcelValueinput.focus()
@@ -333,7 +330,7 @@ const PlaceOrderTextInput = (props) => {
           <TouchableOpacity
             onPress={showDatePicker}
             style={styles.buttonPlannedDate}>
-           /
+            <Text style={styles.textPlannedDate}>{isDateSelected}</Text>
             <DateTimePickerModal
               isVisible={isDatePickerVisible}
               mode="datetime"
@@ -374,21 +371,18 @@ const PlaceOrderTextInput = (props) => {
             ref={(ref) => {
               this._commentinput = ref;
             }}
-            onSubmitEditing={() => {
-              /* this._widtinput && this._weightinput.focus() */
-            }}
+            onSubmitEditing={() => this._widtinput && this._weightinput.focus()}
             multiline
           />
         </View>
       )}
       {/* </View> */}
       {!isPickupPoint && (
-        <>
         <TouchableOpacity onPress={onPressNotify} style={styles.buttonNotify}>
           <Image
             style={styles.calanderImage}
             source={
-              props.notifyRecipient
+              notifyImage
                 ? require('../../../assets/assets/PlaceOrder/ic_checkbox_check.png')
                 : require('../../../assets/assets/PlaceOrder/ic_checkbox_uncheck.png')
             }
@@ -397,21 +391,6 @@ const PlaceOrderTextInput = (props) => {
             Notify recipient by email or phone?
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity onPress={onPressEndTripNotify} style={styles.buttonEndTripOtpNotify}>
-          <Image
-            style={styles.calanderImage}
-            source={
-              props.sendEndTripOtpToReceiver
-                ? require('../../../assets/assets/PlaceOrder/ic_checkbox_check.png')
-                : require('../../../assets/assets/PlaceOrder/ic_checkbox_uncheck.png')
-            }
-          />
-          <Text style={styles.textNotify}>
-            Send <Text style={{fontWeight:"bold"}}>END TRIP OTP</Text> to receiver
-          </Text>
-        </TouchableOpacity>
-        </>
       )}
     </View>
   );
@@ -479,11 +458,6 @@ const styles = StyleSheet.create({
     // margin: 16,
     marginTop: 16,
     height: 40,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  buttonEndTripOtpNotify: {
-    marginTop:8,
     flexDirection: 'row',
     alignItems: 'center',
   },

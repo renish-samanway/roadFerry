@@ -75,7 +75,6 @@ class FCMService {
         '[FCMService] onNotificationOpenedApp Notification caused app to open',
       );
       if (remoteMessage) {
-        //console.log(`remoteMessage ${JSON.stringify(remoteMessage)}`)
         let notification = null;
         if (Platform.OS === 'ios') {
           notification = remoteMessage.data;
@@ -84,8 +83,6 @@ class FCMService {
           notification = remoteMessage.data;
           alert(notification.body)
         }
-        console.log(`notification:-> ${JSON.stringify(notification)}`)
-        
       }
     });
 
@@ -103,7 +100,6 @@ class FCMService {
           } else {
             notification = remoteMessage.data;
           }
-          console.log(remoteMessage);
           onOpenNotification(notification);
         }
       });
@@ -118,7 +114,7 @@ class FCMService {
         } else {
           notification = remoteMessage.data;
         }
-        // onNotification(notification);
+        //onNotification(notification);
         alert(notification.body)
       }
     });

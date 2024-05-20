@@ -24,6 +24,13 @@ export const nameValidator = (name) => {
   return '';
 };
 
+export const ageValidator = (age) => {
+  if (!age || age.length <= 0) {
+    return "Age can't be blank";
+  }
+  return '';
+};
+
 export const lastNameValidator = (name) => {
   if (!name || name.length <= 0) {
     return "Last Name can't be empty";

@@ -105,7 +105,6 @@ export const fetchUserList = (currentLat, currentLong) => {
       // console.log('check');
       firestore()
         .collection('users')
-        .orderBy('priority', 'asc')
         .get()
         .then((querySnapshot) => {
           // console.log('Total users: ', querySnapshot.size);
@@ -115,32 +114,28 @@ export const fetchUserList = (currentLat, currentLong) => {
               documentSnapshot.id,
               documentSnapshot.data(),
             ); */
+            if (documentSnapshot.get('user_type') === 'transporter') {
+              var address = documentSnapshot.get('address');
+              // console.log('Latitude is : ', documentSnapshot.get('address'));
+              // console.log('Coordinate is : ', address.coordinates.latitude);
 
-            var transporterData = documentSnapshot.data();
-            if (transporterData.user_type === 'transporter') {
-              var address = transporterData.address
-              if (address.coordinates != undefined) {
-                // console.log('Latitude is : ', documentSnapshot.get('address'));
-                // console.log('Coordinate is : ', address.coordinates.latitude);
-
-                var distance = getPreciseDistance(
-                  {latitude: currentLat, longitude: currentLong},
-                  {
-                    latitude: address.coordinates.latitude,
-                    longitude: address.coordinates.longitude,
-                  },
+              var distance = getPreciseDistance(
+                {latitude: currentLat, longitude: currentLong},
+                {
+                  latitude: address.coordinates.latitude,
+                  longitude: address.coordinates.longitude,
+                },
+              );
+              if (distance / 1000 <= AppPreference.DISTANCE_MARGIN) {
+                // console.log('Transporter uid is : ', documentSnapshot.id);
+                // loadedUserData.push(documentSnapshot.id);
+                loadedUserData.push(
+                  new UserList(documentSnapshot.id, documentSnapshot.data()),
                 );
-                if (distance / 1000 <= AppPreference.DISTANCE_MARGIN) {
-                  // console.log('Transporter uid is : ', documentSnapshot.id);
-                  // loadedUserData.push(documentSnapshot.id);
-                  loadedUserData.push(
-                    new UserList(documentSnapshot.id, documentSnapshot.data()),
-                  );
-                }
               }
             }
           });
-          // console.log('User Data is : ', loadedUserData);
+          console.log('User Data is : ', loadedUserData);
           dispatch({
             type: SET_USER_LIST,
             allUserData: loadedUserData,

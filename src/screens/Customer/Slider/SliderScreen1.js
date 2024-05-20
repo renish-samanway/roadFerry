@@ -8,11 +8,8 @@ import {
   ScrollView,
   Dimensions
 } from 'react-native';
-
 // Import the Plugins and Thirdparty library.
 import {RFPercentage} from 'react-native-responsive-fontsize';
-import AppConstants from '../../../helper/constants/AppConstants';
-
 // Import the JS file.
 import Colors from '../../../helper/extensions/Colors';
 
@@ -36,10 +33,10 @@ const SliderScreen1 = (props) => {
           <View style={styles.inActiveDotView} />
         </View>
         <Text style={styles.titleTextLabel}>
-          Effortless Delivery
+          Browse your menu and order directly
         </Text>
         <Text style={styles.subTitleTextLabel}>
-          Simplify moving goods with our user-friendly app. Explore a seamless journey for your items.
+          Our app can send you everywhere, even space. For only $2.99 per month
         </Text>
       </ScrollView>
       <TouchableOpacity
@@ -63,17 +60,17 @@ const SliderScreen1 = (props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundColor
+    backgroundColor: Colors.backgroundColor,
   },
   sliderImage: {
     margin: 16,
-    marginTop: 48,
-    marginLeft: 'auto',
-    marginRight: 'auto',
+    marginTop: 64,
+    marginLeft: 24,
+    marginRight: 24,
     height: 'auto',
     width: width - 24 - 24,
     aspectRatio: imageRatio,
-    resizeMode: 'contain'
+    resizeMode: 'contain',
   },
   dotView: {
     margin: 16,

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   FlatList,
   Dimensions,
 } from 'react-native';
-import {RFPercentage} from 'react-native-responsive-fontsize';
+import { RFPercentage } from 'react-native-responsive-fontsize';
 
 // Import the Plugins and Thirdparty library.
 
@@ -16,44 +16,115 @@ import {RFPercentage} from 'react-native-responsive-fontsize';
 
 import Colors from '../../../helper/extensions/Colors';
 import {
-  historyStatus,
+  driverHistoryStatus,
   OrderHistroyData,
 } from '../../../helper/extensions/dummyData';
 import SelectParcel from '../../../components/Customer/AddParcelDetails/SelectParcel';
+import { useDispatch, useSelector } from 'react-redux';
+import EmptyData from '../../../components/design/EmptyData';
+import * as getOrderHistoryDataActions from '../../../store/actions/customer/orderHistory/getOrderHistoryData';
+import MenuView from '../../../components/design/MenuView';
+import Loader from '../../../components/design/Loader';
 
 // Load the main class.
 const windowWidth = Dimensions.get('window').width;
 
 const DriverHistoryScreen = (props) => {
-  const selectedHistoryStatus = props.navigation.getParam('historyStatus');
+  let selectedHistoryStatus = props.navigation.getParam('historyStatus');
+  if (selectedHistoryStatus == undefined) {
+    selectedHistoryStatus = 0
+  }
 
-  const renderPendingHistroyData = (itemData) => {
+  let userUID = useSelector(
+    (state) => state.fetchProfileData.userUID,
+  );
+  // userUID = "B4Ti8IgLgpsKZECGqOJ0"
+  console.log(`DriverHistoryScreen.userUID: ${userUID}`)
+
+  let assignedData = props.navigation.getParam('assignedData');
+  assignedData = useSelector(
+    (state) => state.customerAssignedOrderData.customerAssignedOrderData,
+  );
+
+  let ongoingData = props.navigation.getParam('ongoingData');
+  ongoingData = useSelector(
+    (state) => state.customerOngoingOrderData.customerOngoingOrderData,
+  );
+
+  let completedData = props.navigation.getParam('completedData');
+  completedData = useSelector(
+    (state) => state.customerCompletedOrderData.customerCompletedOrderData,
+  );
+
+  let rejectedData = props.navigation.getParam('rejectedData');
+  rejectedData = useSelector(
+    (state) => state.customerRejectedOrderData.customerRejectedOrderData,
+  );
+
+  const isDetailPageLoading = useSelector((state) => state.customerOrderData.isDetailLoading)
+
+  const dispatch = useDispatch();
+  const loadOrderHistoryData = useCallback(async () => {
+    try {
+      dispatch(getOrderHistoryDataActions.getCustomerOrderData(userUID, false, true));
+    } catch (err) {
+      console.log('Error is : ', err);
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    const willFocusSub = props.navigation.addListener(
+      'willFocus', () => {
+        console.log(`willFocus`)
+        // setSelectedIndex(selectedIndex)
+        loadOrderHistoryData()
+      });
+
+    return () => {
+      willFocusSub.remove();
+    };
+  }, [loadOrderHistoryData]);
+
+  useEffect(() => {
+    loadOrderHistoryData().then(() => {
+    });
+  }, [dispatch, loadOrderHistoryData]);
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const openDriverDetailScreen = (itemData) => {
+    props.navigation.navigate({
+      routeName: 'DriverDetailScreen',
+      params: {
+        historyStatus: selectedIndex,
+        selectedOrderData: itemData.item,
+        isOngoingList: (ongoingData != undefined && ongoingData.length !== 0)
+      },
+    })
+  }
+
+  const renderPendingHistoryData = (itemData) => {
     return (
       <TouchableOpacity
         style={styles.historyView}
         onPress={() =>
-          props.navigation.navigate({
-            routeName: 'DriverDetailScreen',
-            params: {
-              historyStatus: selectedIndex,
-            },
-          })
+          openDriverDetailScreen(itemData)
         }>
         <View style={styles.itemRow}>
-          <Text style={styles.unSelectedStatusText}>#264100</Text>
-          <Text style={styles.titleText}>₹ {2000}</Text>
+          <Text style={styles.unSelectedStatusText}>#{itemData.item.data.order_id}</Text>
+          <Text style={styles.titleText}>₹ {itemData.item.data.price}</Text>
         </View>
         <View style={styles.textView}>
           <Text style={styles.titleText} numberOfLines={1}>
-            Ahmedabad
+            {itemData.item.data.pickup_location.city}
           </Text>
           <Text style={styles.subTitleText}>-- to --</Text>
           <Text style={styles.titleText} numberOfLines={1}>
-            Vadodara
+            {itemData.item.data.drop_location.city}
           </Text>
         </View>
-        <SelectParcel parcelHistory={true} />
-        <View style={styles.seperateLine} />
+        <SelectParcel isTransporter={true} parcelHistory={true} data={itemData.item.data.drop_location} />
+        {/* <View style={styles.seperateLine} />
         <View style={{margin: 8}}>
           <Text style={styles.subTitleText}>Customer Details</Text>
           <Text style={{...styles.titleText, marginTop: 4}}>
@@ -66,95 +137,66 @@ const DriverHistoryScreen = (props) => {
             +91 99844 38573
           </Text>
         </View>
-        <View style={styles.seperateLine} />
+        <View style={styles.seperateLine} /> */}
         <View style={styles.itemRow}>
-          <TouchableOpacity style={styles.detailView}>
+          <TouchableOpacity
+            style={styles.detailView}
+            onPress={() => {
+              openDriverDetailScreen(itemData)
+            }}>
             <Text style={styles.detailText}>Details</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.optionView}
-            onPress={() =>
-              props.navigation.navigate({
-                routeName: 'CancelOrderScreen',
-              })
-            }>
-            <Text style={styles.optionText}>Not started</Text>
-            <Image
-              style={styles.optionImage}
-              source={require('../../../assets/assets/Driver/Dashboard/ic_dropdown.png')}
-            />
-          </TouchableOpacity>
+          <MenuView
+            navigation={props.navigation}
+            data={itemData.item}
+            isAssigned={true}
+            onRefreshList={() => {
+              setIsLoading(false)
+              loadOrderHistoryData().then(() => { })
+            }}
+            showLoader={() => {
+              // console.log(`showLoader`)
+              setIsLoading(true)
+            }}
+            hideLoader={() => {
+              // console.log(`hideLoader`)
+              setIsLoading(false)
+            }}
+          />
         </View>
       </TouchableOpacity>
     );
   };
 
-  const renderCompletedHistroyData = (itemData) => {
+  const renderOngoingHistoryData = (itemData) => {
+    const { item } = itemData
+    const { data } = item
+    const { status } = data
     return (
       <TouchableOpacity
         style={styles.historyView}
         onPress={() =>
-          props.navigation.navigate({
-            routeName: 'DriverDetailScreen',
-            params: {
-              historyStatus: selectedIndex,
-            },
-          })
-        }>
-        <View style={styles.itemRow}>
-          <Text style={styles.unSelectedStatusText}>#264100</Text>
-          <Text style={styles.titleText}>₹ {2000}</Text>
-        </View>
-        <View style={styles.textView}>
-          <Text style={styles.titleText} numberOfLines={1}>
-            Ahmedabad
-          </Text>
-          <Text style={styles.subTitleText}>-- to --</Text>
-          <Text style={styles.titleText} numberOfLines={1}>
-            Vadodara
-          </Text>
-        </View>
-        <SelectParcel parcelHistory={true} />
-        <View style={styles.itemRow}>
-          <TouchableOpacity style={styles.detailView}>
-            <Text style={styles.detailText}>Details</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderOngoingdHistroyData = (itemData) => {
-    return (
-      <TouchableOpacity
-        style={styles.completedHistoryMainView}
-        onPress={() =>
-          props.navigation.navigate({
-            routeName: 'DriverDetailScreen',
-            params: {
-              historyStatus: selectedIndex,
-            },
-          })
+          openDriverDetailScreen(itemData)
         }>
         {/* <View style={styles.acceptedView}>
           <Text style={styles.selectedStatusText}>Accepted</Text>
         </View> */}
-        <View style={styles.completedHistorySubView}>
-          <View style={styles.itemRow}>
-            <Text style={styles.unSelectedStatusText}>#264100</Text>
-            <Text style={styles.titleText}>₹ {2000}</Text>
-          </View>
-          <View style={styles.textView}>
-            <Text style={styles.titleText} numberOfLines={1}>
-              Ahmedabad
-            </Text>
-            <Text style={styles.subTitleText}>-- to --</Text>
-            <Text style={styles.titleText} numberOfLines={1}>
-              Vadodara
-            </Text>
-          </View>
-          <SelectParcel parcelHistory={true} />
-          <View style={styles.seperateLine} />
+        {/* <View style={styles.completedHistorySubView}> */}
+        <View style={styles.itemRow}>
+          <Text style={styles.unSelectedStatusText}>#{itemData.item.data.order_id}</Text>
+          <Text style={styles.titleText}>₹ {itemData.item.data.price}</Text>
+        </View>
+        <View style={styles.textView}>
+          <Text style={styles.titleText} numberOfLines={1}>
+            {itemData.item.data.pickup_location.city}
+          </Text>
+          <Text style={styles.subTitleText}>-- to --</Text>
+          <Text style={styles.titleText} numberOfLines={1}>
+            {itemData.item.data.drop_location.city}
+          </Text>
+        </View>
+        <SelectParcel isTransporter={true} parcelHistory={true} data={itemData.item.data.drop_location} />
+        {/* <View style={styles.seperateLine} />
           <View style={{margin: 8}}>
             <Text style={styles.subTitleText}>Driver Details</Text>
             <Text style={{...styles.titleText, marginTop: 4}}>
@@ -167,48 +209,103 @@ const DriverHistoryScreen = (props) => {
               +91 99844 38573
             </Text>
           </View>
-          <View style={styles.seperateLine} />
-          <View style={styles.itemRow}>
-            <TouchableOpacity style={styles.detailView}>
-              <Text style={styles.detailText}>Details</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.trackOrderView}>
-              <Text style={styles.selectedStatusText}>Track Order</Text>
-            </TouchableOpacity>
-          </View>
+          <View style={styles.seperateLine} /> */}
+        <View style={styles.itemRow}>
+          <TouchableOpacity
+            style={styles.detailView}
+            onPress={() => {
+              openDriverDetailScreen(itemData)
+            }}>
+            <Text style={styles.detailText}>Details</Text>
+          </TouchableOpacity>
+          {/* {itemData} */}
+          {status != undefined && status != 'dispute' &&
+            <MenuView
+              navigation={props.navigation}
+              data={itemData.item}
+              isAssigned={false}
+              onRefreshList={() => {
+                setIsLoading(false)
+                loadOrderHistoryData().then(() => { })
+              }}
+              showLoader={() => {
+                // console.log(`showLoader`)
+                setIsLoading(true)
+              }}
+              hideLoader={() => {
+                // console.log(`hideLoader`)
+                setIsLoading(false)
+              }}
+            />}
+        </View>
+        {/* </View> */}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderCompletedHistoryData = (itemData) => {
+    return (
+      <TouchableOpacity
+        style={styles.historyView}
+        onPress={() =>
+          openDriverDetailScreen(itemData)
+        }>
+        <View style={styles.itemRow}>
+          <Text style={styles.unSelectedStatusText}>#{itemData.item.data.order_id}</Text>
+          <Text style={styles.titleText}>₹ {itemData.item.data.price}</Text>
+        </View>
+        <View style={styles.textView}>
+          <Text style={styles.titleText} numberOfLines={1}>
+            {itemData.item.data.pickup_location.city}
+          </Text>
+          <Text style={styles.subTitleText}>-- to --</Text>
+          <Text style={styles.titleText} numberOfLines={1}>
+            {itemData.item.data.drop_location.city}
+          </Text>
+        </View>
+        <SelectParcel isTransporter={true} parcelHistory={true} data={itemData.item.data.drop_location} />
+        <View style={styles.itemRow}>
+          <TouchableOpacity
+            style={styles.detailView}
+            onPress={() => {
+              openDriverDetailScreen(itemData)
+            }}
+          >
+            <Text style={styles.detailText}>Details</Text>
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
   };
 
-  const renderRejectedHistroyData = (itemData) => {
+  const renderRejectedHistoryData = (itemData) => {
     return (
       <TouchableOpacity
         style={styles.historyView}
         onPress={() =>
-          props.navigation.navigate({
-            routeName: 'ParcelDetailsScreen',
-            params: {
-              historyStatus: selectedIndex,
-            },
-          })
+          openDriverDetailScreen(itemData)
         }>
         <View style={styles.itemRow}>
-          <Text style={styles.unSelectedStatusText}>#264100</Text>
-          <Text style={styles.titleText}>₹ {2000}</Text>
+          <Text style={styles.unSelectedStatusText}>#{itemData.item.data.order_id}</Text>
+          <Text style={styles.titleText}>₹ {itemData.item.data.price}</Text>
         </View>
         <View style={styles.textView}>
           <Text style={styles.titleText} numberOfLines={1}>
-            Ahmedabad
+            {itemData.item.data.pickup_location.city}
           </Text>
           <Text style={styles.subTitleText}>-- to --</Text>
           <Text style={styles.titleText} numberOfLines={1}>
-            Vadodara
+            {itemData.item.data.drop_location.city}
           </Text>
         </View>
-        <SelectParcel parcelHistory={true} />
+        <SelectParcel isTransporter={true} parcelHistory={true} data={itemData.item.data.drop_location} />
         <View style={styles.itemRow}>
-          <TouchableOpacity style={styles.detailView}>
+          <TouchableOpacity
+            style={styles.detailView}
+            onPress={() => {
+              openDriverDetailScreen(itemData)
+            }}
+          >
             <Text style={styles.detailText}>Details</Text>
           </TouchableOpacity>
         </View>
@@ -226,7 +323,15 @@ const DriverHistoryScreen = (props) => {
             ? styles.selectedStatusView
             : styles.unSelectedStatusView
         }
-        onPress={() => setSelectedIndex(itemData.item.id)}>
+        onPress={() => {
+          setSelectedIndex(itemData.item.id)
+          if (itemData.item.id == driverHistoryStatus.length - 1) {
+            flatList.current.scrollToEnd({ animated: true })
+          }
+          if (itemData.item.id == 0) {
+            flatList.current.scrollToIndex({ animated: true, index: 0 })
+          }
+        }}>
         <Text
           style={
             selectedIndex === itemData.item.id
@@ -239,58 +344,83 @@ const DriverHistoryScreen = (props) => {
     );
   };
 
+  const flatList = useRef(null);
   return (
     <View style={styles.container}>
       <View style={styles.statusContainerView}>
         <FlatList
+          ref={flatList}
           horizontal
           keyExtractor={(item, index) => item.id}
-          data={historyStatus}
+          data={driverHistoryStatus}
           renderItem={historyStatusData}
           showsHorizontalScrollIndicator={false}
+          onContentSizeChange={(contentWidth, contentHeight) => {
+            if (selectedIndex == driverHistoryStatus.length - 1) {
+              flatList.current.scrollToEnd({ animated: true })
+            }
+            if (selectedIndex == 0) {
+              flatList.current.scrollToIndex({ animated: true, index: 0 })
+            }
+          }}
         />
       </View>
-      {selectedIndex === 0 && (
-        <FlatList
-          style={{marginBottom: 16}}
+      {selectedIndex === 0 ?
+        assignedData != undefined && assignedData.length != 0 ? <FlatList
+          style={{ marginBottom: 16 }}
           keyExtractor={(item, index) => item.id}
-          data={OrderHistroyData}
-          renderItem={renderPendingHistroyData}
+          data={assignedData}
+          renderItem={renderPendingHistoryData}
           showsVerticalScrollIndicator={false}
-        />
-      )}
-      {selectedIndex === 1 && (
-        <FlatList
-          style={{marginBottom: 16}}
+        /> : <EmptyData data={"assigned data"} tryAgain={() => {
+          loadOrderHistoryData().then(() => { })
+        }} />
+        : null}
+      {selectedIndex === 1 ?
+        ongoingData != undefined && ongoingData.length != 0 ? <FlatList
+          style={{ marginBottom: 16 }}
           keyExtractor={(item, index) => item.id}
-          data={OrderHistroyData}
-          renderItem={renderOngoingdHistroyData}
+          data={ongoingData}
+          renderItem={renderOngoingHistoryData}
           showsVerticalScrollIndicator={false}
-        />
-      )}
-      {selectedIndex === 2 && (
-        <FlatList
-          style={{marginBottom: 16}}
+        /> : <EmptyData data={"ongoing data"} tryAgain={() => {
+          loadOrderHistoryData().then(() => { })
+        }} />
+        : null}
+      {selectedIndex === 2 ?
+        completedData != undefined && completedData.length != 0 ? <FlatList
+          style={{ marginBottom: 16 }}
           keyExtractor={(item, index) => item.id}
-          data={OrderHistroyData}
-          renderItem={renderCompletedHistroyData}
+          data={completedData}
+          renderItem={renderCompletedHistoryData}
           showsVerticalScrollIndicator={false}
-        />
-      )}
-      {selectedIndex === 3 && (
-        <FlatList
-          style={{marginBottom: 16}}
+        /> : <EmptyData data={"completed data"} tryAgain={() => {
+          loadOrderHistoryData().then(() => { })
+        }} />
+        : null}
+      {selectedIndex === 3 ?
+        rejectedData != undefined && rejectedData.length != 0 ? <FlatList
+          style={{ marginBottom: 16 }}
           keyExtractor={(item, index) => item.id}
-          data={OrderHistroyData}
-          renderItem={renderRejectedHistroyData}
+          data={rejectedData}
+          renderItem={renderRejectedHistoryData}
           showsVerticalScrollIndicator={false}
-        />
-      )}
+        /> : <EmptyData data={"rejected data"} tryAgain={() => {
+          loadOrderHistoryData().then(() => { })
+        }} />
+        : null}
+      <Loader loading={isLoading || isDetailPageLoading} />
     </View>
   );
 };
 
 DriverHistoryScreen.navigationOptions = (navigationData) => {
+  let selectedHistoryStatus = navigationData.navigation.getParam('historyStatus');
+  let isShowDrawer = false
+  if (selectedHistoryStatus === undefined) {
+    isShowDrawer = true
+  }
+
   return {
     headerShown: true,
     headerTitle: 'Parcel History',
@@ -303,12 +433,21 @@ DriverHistoryScreen.navigationOptions = (navigationData) => {
       <View style={styles.viewHeaderLeft}>
         <TouchableOpacity
           onPress={() => {
-            navigationData.navigation.pop();
+            if (isShowDrawer) {
+              navigationData.navigation.toggleDrawer();
+            } else {
+              navigationData.navigation.pop();
+            }
           }}>
-          <Image
-            style={styles.menuImage}
-            source={require('../../../assets/assets/Authentication/back.png')}
-          />
+          {isShowDrawer ?
+            <Image
+              style={styles.menuImage}
+              source={require('../../../assets/assets/dashboard/ic_menu.png')}
+            /> :
+            <Image
+              style={styles.menuImage}
+              source={require('../../../assets/assets/Authentication/back.png')}
+            />}
         </TouchableOpacity>
       </View>
     ),
@@ -321,6 +460,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundColor,
+  },
+  menuItemText: {
+    textAlign: 'center',
+    fontSize: RFPercentage(2),
+    fontFamily: 'SofiaPro-Regular'
+  },
+  menuItemView: {
+    backgroundColor: Colors.mainBackgroundColor
   },
   viewHeaderLeft: {
     paddingLeft: 16,
@@ -373,10 +520,9 @@ const styles = StyleSheet.create({
   historyView: {
     // flex: 1,
     margin: 16,
-    marginBottom: 0,
     backgroundColor: Colors.backgroundColor,
     borderRadius: 10,
-    shadowOffset: {width: 0, height: 5},
+    shadowOffset: { width: 0, height: 5 },
     shadowRadius: 5,
     shadowOpacity: 0.15,
     elevation: 5,
@@ -457,7 +603,6 @@ const styles = StyleSheet.create({
   },
   completedHistoryMainView: {
     margin: 16,
-    marginBottom: 0,
     backgroundColor: Colors.backgroundColor,
     borderRadius: 10,
   },
@@ -465,7 +610,7 @@ const styles = StyleSheet.create({
     // marginTop: -16,
     backgroundColor: Colors.backgroundColor,
     borderRadius: 20,
-    shadowOffset: {width: 0, height: 5},
+    shadowOffset: { width: 0, height: 5 },
     shadowRadius: 5,
     shadowOpacity: 0.15,
     elevation: 5,

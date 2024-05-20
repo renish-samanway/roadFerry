@@ -8,6 +8,7 @@ import {
   ScrollView,
   Dimensions
 } from 'react-native';
+
 // Import the Plugins and Thirdparty library.
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,21 +21,17 @@ const {height, width} = Dimensions.get('window');
 const imageWidth = 963
 const imageHeight = 864
 const imageRatio = imageWidth / imageHeight
-
 // Load the main class.
-const resetDashboardAction = StackActions.reset({
+
+const resetLoginAction = StackActions.reset({
   index: 0,
-  actions: [NavigationActions.navigate({ routeName: "Dashboard" })]
+  actions: [NavigationActions.navigate({ routeName: "auth" })]
 });
 
 const SliderScreen3 = (props) => {
   const onPressNext = () => {
     AsyncStorage.setItem(AppPreference.IS_SLIDER, '1');
-    // setLoginUserType('customer')
-    /* props.navigation.navigate({
-      routeName: 'Dashboard',
-    }); */
-    props.navigation.dispatch(resetDashboardAction);
+    props.navigation.dispatch(resetLoginAction);
     /* props.navigation.navigate({
       routeName: 'LoginScreen',
     }); */
@@ -51,9 +48,9 @@ const SliderScreen3 = (props) => {
           <View style={styles.inActiveDotView} />
           <View style={styles.activeDotView} />
         </View>
-        <Text style={styles.titleTextLabel}>Efficient Transport</Text>
+        <Text style={styles.titleTextLabel}>Pickup delivery at your door</Text>
         <Text style={styles.subTitleTextLabel}>
-          Experience reliable service and clear pricing for your items with Road Ferry.
+          Our app can send you everywhere, even space. For only $2.99 per month
         </Text>
       </ScrollView>
       <TouchableOpacity style={styles.nextView} onPress={() => onPressNext()}>
@@ -75,11 +72,11 @@ const styles = StyleSheet.create({
   },
   sliderImage: {
     margin: 16,
-    marginTop: 48,
+    marginTop: 64,
     marginLeft: 24,
     marginRight: 24,
     height: 'auto',
-    width: width - 24 - 24 - 48,
+    width: width - 24 - 24,
     aspectRatio: imageRatio,
     resizeMode: 'contain',
   },

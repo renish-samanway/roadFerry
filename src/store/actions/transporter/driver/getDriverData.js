@@ -1,7 +1,8 @@
 import firestore from '@react-native-firebase/firestore';
+import AppConstants from '../../../../helper/constants/AppConstants';
 
 export const GET_DRIVER_LIST = 'GET_DRIVER_LIST';
-export const IS_LOADING = 'IS_LOADING';
+export const IS_DRIVER_LOADING = 'IS_DRIVER_LOADING';
 
 export const fetchDriverList = (userID, isStartProgress) => {
   return async (dispatch) => {
@@ -10,7 +11,7 @@ export const fetchDriverList = (userID, isStartProgress) => {
       const driverList = [];
       if (isStartProgress) {
         dispatch({
-          type: IS_LOADING,
+          type: IS_DRIVER_LOADING,
           isLoading: true,
         });
       }
@@ -18,6 +19,7 @@ export const fetchDriverList = (userID, isStartProgress) => {
         .collection('users')
         .doc(userID)
         .collection('driver_details')
+        .where('is_deleted', '==', false)
         .get()
         .then((querySnapshot) => {
           console.log('Total driver_details data: ', querySnapshot.size);
@@ -38,7 +40,7 @@ export const fetchDriverList = (userID, isStartProgress) => {
     } catch (err) {
       // send to custom analytics server
       dispatch({
-        type: IS_LOADING,
+        type: IS_DRIVER_LOADING,
         isLoading: false,
       });
       throw err;
